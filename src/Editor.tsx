@@ -65,6 +65,7 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [sourceOpen, setSourceOpen] = useState(false);
   const commentRef = useRef<HTMLTextAreaElement>(null);
   const dirty = JSON.stringify(fields) !== JSON.stringify(fieldsOf(content));
   useEffect(() => {
@@ -188,6 +189,12 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
           콘텐츠 목록
         </button>
         <div className="editor-heading-actions">
+          {content?.aiSource && (
+            <button className="button" onClick={() => setSourceOpen(true)}>
+              <FileText size={14} />
+              AI 원문 보기
+            </button>
+          )}
           <span className={`save-indicator ${dirty ? 'unsaved' : ''}`}>
             {dirty ? (
               <>
@@ -327,6 +334,7 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                     >
                       <input
                         type="checkbox"
+                        aria-label={CHANNEL_NAMES[channel]}
                         checked={fields.channels.includes(channel)}
                         onChange={() => {
                           if (fields.channels.includes(channel) && fields.channels.length === 1) {
@@ -750,6 +758,29 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
           </div>
         </aside>
       </div>
+      {sourceOpen && content?.aiSource && (
+        <Modal title="AI가 각색한 원문" onClose={() => setSourceOpen(false)}>
+          <div className="ai-source-details">
+            <p>
+              {content.aiSource.formula.toUpperCase()} · {content.aiSource.model} ·{' '}
+              {formatTime(content.aiSource.createdAt)}
+            </p>
+            <h3>원문</h3>
+            <pre>{content.aiSource.source}</pre>
+            {content.aiSource.instructions && (
+              <>
+                <h3>추가 요청·공식</h3>
+                <pre>{content.aiSource.instructions}</pre>
+              </>
+            )}
+          </div>
+          <div className="modal-actions">
+            <button className="button primary" onClick={() => setSourceOpen(false)}>
+              확인했어요
+            </button>
+          </div>
+        </Modal>
+      )}
       {deleteOpen && (
         <Modal title="콘텐츠를 삭제할까요?" onClose={() => setDeleteOpen(false)}>
           <p className="modal-description">

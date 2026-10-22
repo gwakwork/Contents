@@ -10,6 +10,14 @@ export interface ContentFields {
   variants: { instagram: string; threads: string };
 }
 export interface Content extends ContentFields {
+  aiSource?: {
+    generationId: string;
+    source: string;
+    formula: string;
+    instructions: string;
+    model: string;
+    createdAt: string;
+  };
   id: string;
   status: Status;
   revision: number;

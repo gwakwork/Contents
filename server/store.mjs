@@ -1,15 +1,27 @@
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { AppError } from './domain.mjs';
+import { AppError, addEvent, createContent, transition } from './domain.mjs';
 import { createExampleContents } from './examples.mjs';
+import { mergeBackup, validateBackup } from './backup.mjs';
 
 export function createStore(dbPath) {
-  if (dbPath !== ':memory:') mkdirSync(dirname(dbPath), { recursive: true });
+  if (dbPath !== ':memory:') mkdirSync(dirname(dbPath), { recursive: true, mode: 0o700 });
   const db = new DatabaseSync(dbPath);
   db.exec('PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   db.exec(`CREATE TABLE IF NOT EXISTS contents (id TEXT PRIMARY KEY, revision INTEGER NOT NULL, data TEXT NOT NULL);
-    CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);`);
+    CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS ai_generations (id TEXT PRIMARY KEY, data TEXT NOT NULL);`);
+  function generation(id) {
+    const row = db.prepare('SELECT data FROM ai_generations WHERE id = ?').get(id);
+    return row ? JSON.parse(row.data) : null;
+  }
+  function saveGeneration(value) {
+    db.prepare(
+      'INSERT INTO ai_generations (id, data) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data',
+    ).run(value.id, JSON.stringify(value));
+    return value;
+  }
   function insert(content) {
     db.prepare('INSERT INTO contents (id, revision, data) VALUES (?, ?, ?)').run(
       content.id,
@@ -46,6 +58,23 @@ export function createStore(dbPath) {
     insert,
     get,
     mutate,
+    restoreBackup(value) {
+      const incoming = validateBackup(value);
+      db.exec('BEGIN IMMEDIATE');
+      try {
+        const existing = db
+          .prepare('SELECT data FROM contents')
+          .all()
+          .map((row) => JSON.parse(row.data));
+        const { additions, summary } = mergeBackup(existing, incoming);
+        for (const content of additions) insert(content);
+        db.exec('COMMIT');
+        return summary;
+      } catch (error) {
+        db.exec('ROLLBACK');
+        throw error;
+      }
+    },
     list: () =>
       db
         .prepare('SELECT data FROM contents')
@@ -72,6 +101,73 @@ export function createStore(dbPath) {
         )
         .run(key, value),
     close: () => db.close(),
+    generation,
+    saveGeneration,
+    generations: () =>
+      db
+        .prepare('SELECT data FROM ai_generations ORDER BY rowid DESC LIMIT 100')
+        .all()
+        .map((row) => JSON.parse(row.data)),
+    interruptGenerations() {
+      for (const row of db.prepare('SELECT data FROM ai_generations').all()) {
+        const value = JSON.parse(row.data);
+        if (value.status === 'running')
+          saveGeneration({
+            ...value,
+            status: 'interrupted',
+            error: '앱이 재시작되어 결과를 확인할 수 없어요. 자동으로 재요청하지 않았어요.',
+            completedAt: new Date().toISOString(),
+          });
+      }
+    },
+    adoptGeneration(id) {
+      db.exec('BEGIN IMMEDIATE');
+      try {
+        const run = generation(id);
+        if (!run || run.status !== 'completed')
+          throw new AppError('완성된 AI 결과만 검토함으로 보낼 수 있어요.', 409);
+        if (run.contentId) {
+          const existing = get(run.contentId);
+          db.exec('COMMIT');
+          return existing;
+        }
+        const result = run.result;
+        let content = createContent({
+          title: result.title,
+          excerpt: result.excerpt,
+          body: result.body,
+          color: 'sage',
+          channels: run.input.channels,
+          variants: { instagram: result.instagram, threads: result.threads },
+        });
+        content.aiSource = {
+          generationId: run.id,
+          source: run.input.source,
+          formula: run.input.formula,
+          instructions: [run.input.customFormula, run.input.instructions]
+            .filter(Boolean)
+            .join('\n'),
+          model: run.model,
+          createdAt: run.createdAt,
+        };
+        content = addEvent(
+          content,
+          'note',
+          `AI 각색 · ${run.input.formula.toUpperCase()} · ${run.model}\n${result.reviewNotes.slice(0, 6).join('\n')}`.slice(
+            0,
+            3000,
+          ),
+        );
+        content = { ...transition(content, { action: 'submit' }), revision: 2 };
+        insert(content);
+        saveGeneration({ ...run, contentId: content.id });
+        db.exec('COMMIT');
+        return content;
+      } catch (error) {
+        db.exec('ROLLBACK');
+        throw error;
+      }
+    },
   };
 }
 

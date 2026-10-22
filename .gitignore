@@ -1,6 +1,11 @@
 node_modules/
 dist/
 data/
+ai-settings.json
+ai-settings.json.*.tmp
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
 .env
 .env.*
 !.env.example

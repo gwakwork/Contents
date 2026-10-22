@@ -24,7 +24,7 @@ export function ChannelIcon({ channel, size = 15 }: { channel: Channel; size?: n
   ) : channel === 'instagram' ? (
     <Instagram size={size} />
   ) : (
-    <span className="threads-icon" style={{ fontSize: size + 2 }}>
+    <span className="threads-icon" style={{ fontSize: size + 2 }} aria-hidden="true">
       @
     </span>
   );

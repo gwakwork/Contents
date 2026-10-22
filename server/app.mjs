@@ -1,5 +1,5 @@
 import express from 'express';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import {
   AppError,
@@ -9,8 +9,18 @@ import {
   publicationEnvelope,
 } from './domain.mjs';
 import { createStore, seedExamples } from './store.mjs';
+import { createAISettings } from './ai-settings.mjs';
+import { installAIRoutes } from './ai-routes.mjs';
+import { createBackup } from './backup.mjs';
 
-export function createApplication({ dbPath = resolve('data/studio.sqlite'), seed = false } = {}) {
+export function createApplication({
+  dbPath = resolve('data/studio.sqlite'),
+  seed = false,
+  settingsFile = resolve(dirname(dbPath), 'ai-settings.json'),
+  environmentKey = process.env.MOA_OPENAI_API_KEY || process.env.OPENAI_API_KEY || '',
+  environmentModel = process.env.MOA_OPENAI_MODEL || '',
+  aiFetch,
+} = {}) {
   const store = createStore(dbPath);
   if (seed && !store.setting('initialized')) {
     seedExamples(store);
@@ -22,6 +32,16 @@ export function createApplication({ dbPath = resolve('data/studio.sqlite'), seed
     res.set('X-Content-Type-Options', 'nosniff');
     res.set('Referrer-Policy', 'same-origin');
     if (req.path.startsWith('/api/')) res.set('Cache-Control', 'no-store');
+    if (req.path.startsWith('/api/')) {
+      let host;
+      try {
+        host = new URL(`http://${req.get('host')}`).hostname;
+      } catch {
+        return res.status(403).json({ error: '이 컴퓨터의 작업 공간에서 열어 주세요.' });
+      }
+      if (!['localhost', '127.0.0.1', '[::1]'].includes(host))
+        return res.status(403).json({ error: '이 컴퓨터의 작업 공간에서 열어 주세요.' });
+    }
     // Reject cross-site mutations. This workspace application deliberately has no public CORS API.
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
       const origin = req.get('origin');
@@ -41,6 +61,7 @@ export function createApplication({ dbPath = resolve('data/studio.sqlite'), seed
     }
     next();
   });
+  app.use('/api/backup', express.json({ limit: '25mb' }));
   app.use(express.json({ limit: '1mb' }));
   app.use('/api', (req, res, next) => {
     if (
@@ -51,7 +72,14 @@ export function createApplication({ dbPath = resolve('data/studio.sqlite'), seed
     }
     next();
   });
-  app.get('/api/health', (_req, res) => res.json({ status: 'ok', storage: 'sqlite' }));
+  app.get('/api/health', (_req, res) =>
+    res.json({ status: 'ok', storage: 'sqlite', application: 'moa-content-studio', ai: true }),
+  );
+  const ai = installAIRoutes(app, {
+    store,
+    settings: createAISettings({ file: settingsFile, environmentKey, environmentModel }),
+    fetchImpl: aiFetch,
+  });
   app.get('/api/channels', (_req, res) =>
     res.json([
       { id: 'website', name: '웹사이트', connected: false },
@@ -60,6 +88,8 @@ export function createApplication({ dbPath = resolve('data/studio.sqlite'), seed
     ]),
   );
   app.get('/api/contents', (_req, res) => res.json(store.list()));
+  app.get('/api/backup', (_req, res) => res.json(createBackup(store.list())));
+  app.post('/api/backup', (req, res) => res.json(store.restoreBackup(req.body)));
   app.post('/api/contents', (req, res) =>
     res.status(201).json(store.insert(createContent(req.body))),
   );
@@ -109,15 +139,23 @@ export function createApplication({ dbPath = resolve('data/studio.sqlite'), seed
   }
   app.use((error, _req, res, _next) => {
     const status = error.status ?? 500;
-    if (status >= 500) console.error(error);
+    if (status >= 500 && !(error instanceof AppError))
+      console.error('Internal request failure:', error.name);
     res.status(status).json({
       error:
-        status >= 500
+        status >= 500 && !(error instanceof AppError)
           ? '저장 중 문제가 생겼어요. 잠시 후 다시 시도해 주세요.'
           : error.type === 'entity.parse.failed'
             ? '요청 형식이 올바르지 않아요.'
             : error.message,
     });
   });
-  return { app, store };
+  return {
+    app,
+    store,
+    close: async () => {
+      await ai.close();
+      store.close();
+    },
+  };
 }

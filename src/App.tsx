@@ -41,9 +41,10 @@ import {
 } from './components';
 import { CHANNEL_NAMES, STATUSES, type Channel, type Content, type Status } from './types';
 import Editor from './Editor';
+import AIStudio from './AIStudio';
 import { LOCAL_MODE, createLocalBackup, restoreLocalBackup } from './local-api';
 
-type Page = 'all' | 'review' | 'approved' | 'channels' | 'guide';
+type Page = 'all' | 'review' | 'approved' | 'channels' | 'guide' | 'ai';
 export default function App() {
   const [contents, setContents] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,7 +144,7 @@ export default function App() {
     }
     setBusy(true);
     try {
-      const data = await createLocalBackup();
+      const data = LOCAL_MODE ? await createLocalBackup() : await api('/backup');
       const href = URL.createObjectURL(
         new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
       );
@@ -174,7 +175,12 @@ export default function App() {
       } catch {
         throw new Error('모아에서 내려받은 JSON 백업 파일을 선택해 주세요.');
       }
-      const summary = await restoreLocalBackup(data);
+      const summary = LOCAL_MODE
+        ? await restoreLocalBackup(data)
+        : await api<{ added: number; copies: number; skipped: number }>('/backup', {
+            method: 'POST',
+            body: JSON.stringify(data),
+          });
       setContents(await api<Content[]>('/contents'));
       setSelected(null);
       setDirty(false);
@@ -214,15 +220,17 @@ export default function App() {
           : b.updatedAt.localeCompare(a.updatedAt),
     );
   const title =
-    page === 'review'
-      ? '나의 검토함'
-      : page === 'approved'
-        ? '승인된 콘텐츠'
-        : page === 'channels'
-          ? '발행 채널'
-          : page === 'guide'
-            ? '이용 가이드'
-            : '모든 콘텐츠';
+    page === 'ai'
+      ? 'AI 콘텐츠 작업실'
+      : page === 'review'
+        ? '나의 검토함'
+        : page === 'approved'
+          ? '승인된 콘텐츠'
+          : page === 'channels'
+            ? '발행 채널'
+            : page === 'guide'
+              ? '이용 가이드'
+              : '모든 콘텐츠';
   const navItems = [
     { id: 'all' as Page, label: '모든 콘텐츠', icon: FolderOpen, count: contents.length },
     {
@@ -256,6 +264,14 @@ export default function App() {
         </div>
         <div className="nav-label">WORKSPACE</div>
         <nav aria-label="주 메뉴">
+          <button
+            className={`nav-item ${page === 'ai' && !selected ? 'active' : ''}`}
+            onClick={() => navigate('ai')}
+          >
+            <Sparkles size={19} />
+            <span>AI 작업실</span>
+            <i className="soon-dot ai-dot" />
+          </button>
           {navItems.map(({ id, label, icon: Icon, count }) => (
             <button
               key={id}
@@ -325,7 +341,7 @@ export default function App() {
             <b>{selected ? (selected === 'new' ? '새 콘텐츠 작성' : '콘텐츠 상세') : title}</b>
           </div>
           <div className="topbar-right">
-            {LOCAL_MODE && (
+            {
               <div className="local-tools">
                 <button
                   aria-label="백업 저장"
@@ -363,7 +379,7 @@ export default function App() {
                   }}
                 />
               </div>
-            )}
+            }
             <span className="private-label">
               {LOCAL_MODE ? <HardDrive size={14} /> : <ShieldCheck size={14} />}
               {LOCAL_MODE ? '내 컴퓨터에 저장' : '나만의 검토 공간'}
@@ -405,29 +421,53 @@ export default function App() {
                     <span className="heading-dot">.</span>
                   </h1>
                   <p>
-                    {page === 'review'
-                      ? '잠깐의 꼼꼼한 검토가 더 좋은 콘텐츠를 만들어요.'
-                      : page === 'approved'
-                        ? '직접 확인하고 승인한, 세상에 나갈 준비가 된 이야기들.'
-                        : page === 'channels'
-                          ? '하나의 이야기, 다양한 채널. 원고부터 차근차근 준비해요.'
-                          : page === 'guide'
-                            ? '처음이어도 괜찮아요. 한 단계씩 함께 시작해요.'
-                            : '흩어진 아이디어를 모아, 발행할 준비까지 한곳에서.'}
+                    {page === 'ai'
+                      ? '원문을 넣고 공식을 고르면, AI가 새로운 콘텐츠로 다듬어 줘요.'
+                      : page === 'review'
+                        ? '잠깐의 꼼꼼한 검토가 더 좋은 콘텐츠를 만들어요.'
+                        : page === 'approved'
+                          ? '직접 확인하고 승인한, 세상에 나갈 준비가 된 이야기들.'
+                          : page === 'channels'
+                            ? '하나의 이야기, 다양한 채널. 원고부터 차근차근 준비해요.'
+                            : page === 'guide'
+                              ? '처음이어도 괜찮아요. 한 단계씩 함께 시작해요.'
+                              : '흩어진 아이디어를 모아, 발행할 준비까지 한곳에서.'}
                   </p>
                 </div>
-                {!['channels', 'guide'].includes(page) && (
+                {!['channels', 'guide', 'ai'].includes(page) && (
                   <button className="button primary" onClick={() => navigate(page, 'new')}>
                     <Plus size={18} />새 콘텐츠 작성
                   </button>
                 )}
               </div>
-              {page === 'channels' ? (
+              {page === 'ai' ? (
+                <AIStudio
+                  onAdopt={(content) => {
+                    setDirty(false);
+                    updated(content);
+                  }}
+                  onDirty={setDirty}
+                  notify={notify}
+                />
+              ) : page === 'channels' ? (
                 <ChannelsPage />
               ) : page === 'guide' ? (
                 <Guide onCreate={() => navigate('all', 'new')} />
               ) : (
                 <>
+                  <section className="ai-home-callout">
+                    <span>
+                      <Sparkles size={22} />
+                    </span>
+                    <div>
+                      <b>원문을 넣으면, AI가 공식에 맞춰 각색해요.</b>
+                      <p>AIDA·PAS·정보 전달형으로 재가공하고, 결과를 확인한 뒤 승인하세요.</p>
+                    </div>
+                    <button className="button primary" onClick={() => navigate('ai')}>
+                      AI 작업실 열기
+                      <ArrowRight size={15} />
+                    </button>
+                  </section>
                   <div className="stats-grid">
                     {[
                       {
@@ -879,12 +919,12 @@ function Guide({ onCreate }: { onCreate: () => void }) {
       <div className="guide-steps">
         {[
           {
-            title: '아이디어를 글로 적어요',
-            body: '‘새 콘텐츠 작성’을 누르고 제목과 본문을 작성해요. 웹사이트와 SNS 중 나중에 올릴 채널을 고르고, 채널별 원고도 따로 준비할 수 있어요.',
+            title: '원문과 공식을 준비해요',
+            body: 'Mac 실행 버전의 ‘AI 작업실’에서 OpenAI API 키를 연결하고 원문을 넣어요. AIDA·PAS·정보 전달형 등 공식을 고르고 말투와 채널을 선택해요.',
           },
           {
-            title: '직접 살펴보고 의견을 남겨요',
-            body: '‘검토 요청’을 누르면 나의 검토함에 들어가요. 미리보기로 글을 읽고, 바꿀 부분이 있으면 의견과 함께 ‘수정 요청’을 눌러요.',
+            title: 'AI가 각색한 결과를 확인해요',
+            body: '‘AI로 각색하기’를 누르면 원문을 공식에 맞게 재가공해요. 원문과 결과를 비교하고 ‘검토함으로 보내기’를 눌러요. AI 작업에는 별도 API 요금이 발생해요.',
           },
           {
             title: '괜찮다면 최종 승인해요',
