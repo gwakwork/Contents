@@ -4,7 +4,7 @@
 
 ## 설치 없이 시작하기
 
-1. [모아 로컬용 ZIP 다운로드](https://github.com/gwakwork/Contents/raw/refs/heads/main/release/moa-local.zip)를 눌러 받습니다. GitHub 로그인이 필요하면 본인 계정으로 로그인합니다.
+1. [모아 로컬용 ZIP 다운로드](https://raw.githubusercontent.com/gwakwork/Contents/main/release/moa-local.zip)를 눌러 받습니다. GitHub 로그인이 필요하면 본인 계정으로 로그인합니다.
 2. Mac에서는 Finder의 **다운로드** 폴더에서 `moa-local.zip`을 더블클릭해 압축을 풉니다. Safari가 자동으로 압축을 풀었다면 이 단계는 건너뜁니다.
 3. `moa-local.html`을 우클릭한 뒤 **다음으로 열기 → Google Chrome 또는 Microsoft Edge**를 선택합니다. 같은 폴더의 `처음 읽어주세요.txt`에 사용 방법이 있습니다.
 4. **새 콘텐츠 작성 → 임시 저장 → 검토 요청 → 미리보기·체크리스트 확인 → 최종 승인** 순서로 사용합니다.

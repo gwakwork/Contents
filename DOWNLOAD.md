@@ -1,6 +1,6 @@
 # Mac에서 모아를 받는 방법
 
-1. [실행 파일 ZIP 받기](https://github.com/gwakwork/Contents/raw/refs/heads/main/release/moa-local.zip)를 누릅니다.
+1. [실행 파일 ZIP 받기](https://raw.githubusercontent.com/gwakwork/Contents/main/release/moa-local.zip)를 누릅니다.
 2. Finder에서 **다운로드** 폴더를 엽니다.
 3. `moa-local.zip`을 더블클릭합니다. 이미 압축이 풀렸다면 이 단계는 건너뜁니다.
 4. `moa-local.html`을 우클릭하고 **다음으로 열기 → Google Chrome** 또는 **Microsoft Edge**를 선택합니다.
