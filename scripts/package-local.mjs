@@ -1,0 +1,17 @@
+import { readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { strToU8, zipSync } from 'fflate';
+
+renameSync('release/index.html', 'release/moa-local.html');
+writeFileSync(
+  'release/처음 읽어주세요.txt',
+  `모아 콘텐츠 스튜디오 — 내 컴퓨터용\n\n1. moa-local.html 파일을 더블클릭하세요.\n2. Chrome 또는 Edge로 열어 주세요. 인터넷 연결이나 프로그램 설치가 필요하지 않습니다.\n3. 새 콘텐츠 작성 → 임시 저장 → 검토 요청 → 체크리스트 확인 → 최종 승인 순서로 사용하세요.\n4. 글은 이 컴퓨터의 브라우저에 저장됩니다. HTML 파일 안에 저장되는 것은 아닙니다.\n5. 중요한 글은 화면 위의 '백업 저장'으로 파일로 보관하세요.\n6. 다른 컴퓨터·브라우저로 옮기거나 HTML 파일의 위치를 바꿀 때는 먼저 백업한 뒤 새 환경에서 '백업 가져오기'를 눌러 주세요.\n7. 시크릿·InPrivate 창에서는 사용하지 마세요. 브라우저 데이터 삭제 시 원고도 삭제됩니다.\n8. 실제 웹사이트·SNS 업로드는 연결되어 있지 않습니다.\n\n같은 컴퓨터·같은 브라우저·같은 위치의 HTML 파일을 계속 사용하면 저장한 글을 다시 볼 수 있습니다.\n`,
+);
+console.log('Local application created: release/moa-local.html (open directly in Chrome or Edge).');
+writeFileSync(
+  'release/moa-local.zip',
+  zipSync({
+    'moa-local.html': new Uint8Array(readFileSync('release/moa-local.html')),
+    '처음 읽어주세요.txt': strToU8(readFileSync('release/처음 읽어주세요.txt', 'utf8')),
+  }),
+);
+console.log('Local download package created: release/moa-local.zip');
