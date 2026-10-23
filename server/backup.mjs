@@ -17,7 +17,7 @@ export function validateBackup(backup) {
     !Array.isArray(backup.contents) ||
     backup.contents.length > 10000
   )
-    throw new AppError('모아에서 내려받은 JSON 백업 파일을 선택해 주세요.');
+    throw new AppError('Narrative에서 내려받은 JSON 백업 파일을 선택해 주세요.');
   const ids = new Set();
   return backup.contents.map((c) => {
     if (

@@ -50,24 +50,25 @@ if [ ! -x "$MOA_NODE" ]; then
   MOA_TEMP=''
 fi
 if ! "$MOA_NODE" --version >/dev/null 2>&1; then fail '실행 도구를 열지 못했어요. Mac의 보안 알림과 운영체제 버전을 확인해 주세요.'; fi
+MOA_APP_VERSION=$("$MOA_NODE" -p "require('./package.json').version")
 MOA_HEALTH=$(/usr/bin/curl --silent --max-time 2 http://127.0.0.1:3001/api/health || true)
 case "$MOA_HEALTH" in
-  *'"application":"moa-content-studio"'*'"ai":true'*)
+  *'"application":"moa-content-studio"'*'"ai":true'*'"version":"'"$MOA_APP_VERSION"'"'*)
     /usr/bin/open 'http://127.0.0.1:3001'
-    printf '이미 실행 중인 모아를 열었어요. 종료할 때는 처음 실행했던 터미널 창에서 Control+C를 누르세요.\n'
+    printf '이미 실행 중인 Narrative를 열었어요. 종료할 때는 처음 실행했던 터미널 창에서 Control+C를 누르세요.\n'
     exit 0 ;;
 esac
 if /usr/sbin/lsof -nP -iTCP:3001 -sTCP:LISTEN >/dev/null 2>&1; then
-  fail '다른 프로그램이나 이전 모아가 3001번 포트를 사용하고 있어요. 해당 프로그램을 종료한 뒤 다시 실행해 주세요.'
+  fail '다른 프로그램이나 이전 Narrative가 3001번 포트를 사용하고 있어요. 해당 프로그램을 종료한 뒤 다시 실행해 주세요.'
 fi
-printf '\n모아 AI 콘텐츠 스튜디오를 시작합니다.\n'
+printf '\nNarrative를 시작합니다.\n'
 HOST='127.0.0.1' PORT='3001' DATA_PATH="$MOA_SUPPORT/studio.sqlite" "$MOA_NODE" server/index.mjs &
 MOA_PID=$!
 MOA_READY=''
 for MOA_ATTEMPT in 1 2 3 4 5 6 7 8 9 10; do
   if ! kill -0 "$MOA_PID" 2>/dev/null; then fail '앱을 시작하지 못했어요. 위 오류 문구를 확인해 주세요.'; fi
   MOA_HEALTH=$(/usr/bin/curl --silent --max-time 2 http://127.0.0.1:3001/api/health || true)
-  case "$MOA_HEALTH" in *'"application":"moa-content-studio"'*'"ai":true'*) MOA_READY='yes'; break ;; esac
+  case "$MOA_HEALTH" in *'"application":"moa-content-studio"'*'"ai":true'*'"version":"'"$MOA_APP_VERSION"'"'*) MOA_READY='yes'; break ;; esac
   sleep 1
 done
 if [ "$MOA_READY" != 'yes' ]; then fail '앱 실행을 확인하지 못했어요. 위 오류 문구를 확인해 주세요.'; fi

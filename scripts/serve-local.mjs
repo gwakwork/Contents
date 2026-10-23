@@ -5,7 +5,10 @@ import { readFileSync } from 'node:fs';
 const html = readFileSync(new URL('../release/moa-local.html', import.meta.url));
 const port = Number(process.env.LOCAL_PORT || 4174);
 const server = createServer((request, response) => {
-  if (request.method === 'GET' && ['/', '/moa-local.html'].includes(request.url)) {
+  if (
+    request.method === 'GET' &&
+    ['/', '/narrative-local.html', '/moa-local.html'].includes(request.url)
+  ) {
     response.writeHead(200, {
       'Content-Type': 'text/html; charset=utf-8',
       'Content-Length': html.length,

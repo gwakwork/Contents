@@ -36,7 +36,7 @@ function openDatabase() {
       };
       request.onblocked = () => {
         database = undefined;
-        reject(new AppError('다른 모아 창을 닫고 다시 열어 주세요.'));
+        reject(new AppError('다른 Narrative 창을 닫고 다시 열어 주세요.'));
       };
     });
   return database;

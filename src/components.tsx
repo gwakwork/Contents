@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { ArrowUpRight, Check, Globe2, Instagram, X } from 'lucide-react';
+import { Check, Globe2, Instagram, X } from 'lucide-react';
 import { CHANNEL_NAMES, STATUSES, type Channel, type Color, type Status } from './types';
 
 export function Brand({ small = false }: { small?: boolean }) {
@@ -7,14 +7,10 @@ export function Brand({ small = false }: { small?: boolean }) {
     <div className={`brand ${small ? 'small' : ''}`}>
       <span className="brand-mark">
         <svg viewBox="0 0 32 32" aria-hidden="true">
-          <path d="M5 24V11l6 8 5-12 5 12 6-8v13" />
+          <path d="M8 25V7l16 18V7" />
         </svg>
       </span>
-      {!small && (
-        <span>
-          모아<span className="brand-sub">content studio</span>
-        </span>
-      )}
+      {!small && <span>Narrative</span>}
     </div>
   );
 }
@@ -60,64 +56,8 @@ export function Cover({
 }) {
   return (
     <div className={`cover cover-${color} ${compact ? 'compact' : ''}`} aria-hidden="true">
-      <span className="cover-line">
-        MOA JOURNAL <ArrowUpRight size={13} />
-      </span>
-      <div className="cover-art">
-        <i />
-        <i />
-        <i />
-      </div>
-      <div className="cover-copy">
-        {
-          {
-            sage: (
-              <>
-                A little less,
-                <br />a little more.
-              </>
-            ),
-            peach: (
-              <>
-                Small steps.
-                <br />
-                Beautiful days.
-              </>
-            ),
-            lavender: (
-              <>
-                A new season,
-                <br />a new story.
-              </>
-            ),
-            sand: (
-              <>
-                Things
-                <br />
-                we cherish.
-              </>
-            ),
-            blue: (
-              <>
-                Find your
-                <br />
-                inspiration.
-              </>
-            ),
-            rose: (
-              <>
-                Stories
-                <br />
-                to be shared.
-              </>
-            ),
-          }[color]
-        }
-      </div>
-      <span className="cover-footer">
-        {title ? '일상에서 발견하는 우리만의 이야기' : 'YOUR NEXT STORY'}
-        <span>모아</span>
-      </span>
+      <span className="cover-initial">{title?.trim().slice(0, 1) || 'N'}</span>
+      <div className="cover-rule" />
     </div>
   );
 }

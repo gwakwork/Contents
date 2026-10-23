@@ -13,7 +13,7 @@ test('create, review, request changes, approve, export, and re-review an edited 
   const failures: string[] = [];
   page.on('pageerror', (error) => failures.push(error.message));
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: '첫 번째 이야기를 모아볼까요?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '아직 콘텐츠가 없습니다.' })).toBeVisible();
   await page.getByRole('button', { name: '첫 콘텐츠 작성하기' }).click();
   await page.getByLabel('콘텐츠 제목').fill('나의 첫 번째 콘텐츠');
   await page.getByLabel('한 줄 소개').fill('검토 과정을 확인하는 이야기');
@@ -53,7 +53,7 @@ test('create, review, request changes, approve, export, and re-review an edited 
   await expect(page.getByRole('button', { name: '채널 연결 후 발행 가능' })).toBeDisabled();
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: '승인 원고 내보내기' }).click();
-  expect((await download).suggestedFilename()).toMatch(/^moa-content-.*\.json$/);
+  expect((await download).suggestedFilename()).toMatch(/^narrative-content-.*\.json$/);
   await page.getByRole('button', { name: '변경 이력' }).click();
   await expect(
     page.locator('.history-panel').getByText('독자에게 질문하는 문장을 더해주세요.'),
@@ -115,5 +115,5 @@ test('sample library, search, filters, channel information, and safe sample clea
   await page.getByRole('button', { name: '예시 정리', exact: true }).click();
   await page.getByRole('button', { name: '예시만 삭제', exact: true }).click();
   await expect(page.locator('.content-card')).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: '첫 번째 이야기를 모아볼까요?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '아직 콘텐츠가 없습니다.' })).toBeVisible();
 });

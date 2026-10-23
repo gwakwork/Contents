@@ -1,6 +1,7 @@
 import express from 'express';
 import { dirname, resolve } from 'node:path';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
 import {
   AppError,
   createContent,
@@ -73,7 +74,14 @@ export function createApplication({
     next();
   });
   app.get('/api/health', (_req, res) =>
-    res.json({ status: 'ok', storage: 'sqlite', application: 'moa-content-studio', ai: true }),
+    res.json({
+      status: 'ok',
+      storage: 'sqlite',
+      application: 'moa-content-studio',
+      ai: true,
+      version,
+      name: 'Narrative',
+    }),
   );
   const ai = installAIRoutes(app, {
     store,

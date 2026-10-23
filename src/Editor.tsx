@@ -165,7 +165,7 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
       );
       const anchor = document.createElement('a');
       anchor.href = href;
-      anchor.download = `moa-content-${content.id}.json`;
+      anchor.download = `narrative-content-${content.id}.json`;
       anchor.click();
       setTimeout(() => URL.revokeObjectURL(href), 1000);
       notify('승인된 원고를 내보냈어요.');
@@ -206,9 +206,7 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                 <Check size={14} />
                 저장됨
               </>
-            ) : (
-              '새로운 이야기를 시작해요'
-            )}
+            ) : null}
           </span>
           <button
             className="button primary"
@@ -222,18 +220,11 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
       </div>
       <div className="editor-title-row">
         <div>
-          <span className="eyebrow">
-            CONTENT STUDIO / {content ? `VERSION ${content.revision}` : 'NEW STORY'}
-          </span>
           <h1>
-            {content ? content.title : '새로운 콘텐츠 작성'}
+            {content ? content.title : '새 콘텐츠'}
             {content?.isExample && <span className="example-pill">예시 콘텐츠</span>}
           </h1>
-          <p>
-            {content
-              ? `${formatTime(content.updatedAt)} 수정 · 나의 콘텐츠`
-              : '작은 아이디어도 좋아요. 떠오르는 이야기를 적어보세요.'}
-          </p>
+          {content && <p>{formatTime(content.updatedAt)} 수정</p>}
         </div>
         <StatusBadge status={dirty && content ? 'draft' : (content?.status ?? 'draft')} />
       </div>
@@ -280,7 +271,7 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                   id="title"
                   className="title-input"
                   autoFocus={!content}
-                  placeholder="이야기에 어울리는 제목을 적어주세요"
+                  placeholder="제목"
                   maxLength={160}
                   value={fields.title}
                   onChange={(event) => change('title', event.target.value)}
@@ -293,7 +284,7 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                 </label>
                 <input
                   id="excerpt"
-                  placeholder="어떤 이야기인지 짧게 소개해 주세요"
+                  placeholder="소개"
                   maxLength={300}
                   value={fields.excerpt}
                   onChange={(event) => change('excerpt', event.target.value)}
@@ -301,21 +292,14 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
               </div>
               <div className="field body-field">
                 <label htmlFor="body">본문</label>
-                <div className="writing-hint">
-                  <FileText size={14} />
-                  문단은 줄을 바꿔 구분해 주세요. 입력한 모습 그대로 미리볼 수 있어요.
-                </div>
                 <textarea
                   id="body"
-                  placeholder={
-                    '어떤 이야기를 나누고 싶으신가요?\n\n나만의 속도로 천천히 적어보세요.'
-                  }
+                  placeholder={'내용을 입력하세요.'}
                   maxLength={100000}
                   value={fields.body}
                   onChange={(event) => change('body', event.target.value)}
                 />
                 <div className="textarea-footer">
-                  <span>내 이야기에 집중하는 시간</span>
                   <span>{fields.body.length.toLocaleString()}자</span>
                 </div>
               </div>
@@ -323,9 +307,7 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                 <label>
                   발행할 채널<span>1개 이상</span>
                 </label>
-                <p className="field-help">
-                  지금은 원고만 준비해요. 실제 업로드는 채널 연결 후 가능해요.
-                </p>
+
                 <div className="channel-choices">
                   {(Object.keys(CHANNEL_NAMES) as Channel[]).map((channel) => (
                     <label
@@ -363,7 +345,7 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                   <div className="variant-heading">
                     <div>
                       <h3>채널별 원고</h3>
-                      <p>채널에 맞게 짧게 다듬어요. 비워두면 본문을 사용해요.</p>
+                      <p>비워두면 본문을 사용합니다.</p>
                     </div>
                     <ChevronDown size={17} />
                   </div>
@@ -433,9 +415,6 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                     </button>
                   ))}
                 </div>
-                <p className="field-help">
-                  표지 스타일은 작업 공간에서만 사용해요. SNS 이미지 업로드는 추후 연결해요.
-                </p>
               </div>
             </div>
           ) : (
@@ -457,20 +436,9 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
               >
                 <Cover color={fields.color} title={fields.title} />
                 <div className="preview-article-body">
-                  <span className="article-category">
-                    {activePreview === 'website'
-                      ? 'MOA JOURNAL'
-                      : `${CHANNEL_NAMES[activePreview]} 미리보기`}
-                  </span>
                   <h2>{fields.title || '이야기의 제목이 들어갈 자리'}</h2>
                   {fields.excerpt && <p className="article-excerpt">{fields.excerpt}</p>}
-                  <div className="article-byline">
-                    <span className="tiny-avatar">나</span>나의 콘텐츠<span>·</span>
-                    {content ? formatTime(content.updatedAt) : '작성 중'}
-                  </div>
-                  <div className="article-text">
-                    {previewCopy || '아직 원고가 없어요. 원고 편집에서 이야기를 시작해 보세요.'}
-                  </div>
+                  <div className="article-text">{previewCopy || '본문이 없습니다.'}</div>
                   {activePreview !== 'website' && (
                     <div
                       className={`social-character-count ${previewCopy.length > (activePreview === 'instagram' ? 2200 : 500) ? 'over-limit' : ''}`}
@@ -481,10 +449,6 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                   )}
                 </div>
               </div>
-              <p className="preview-footnote">
-                <Eye size={13} />
-                원고를 확인하기 위한 미리보기예요. 실제 채널에서는 모습이 달라질 수 있어요.
-              </p>
             </div>
           )}
         </div>
@@ -520,51 +484,25 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                   )}
                 </span>
                 <h2>{STATUSES[content?.status ?? 'draft'].label}</h2>
-                <p>{STATUSES[content?.status ?? 'draft'].description}</p>
-              </div>
-              <div className="review-progress">
-                <div className="done">
-                  <span>
-                    <Check size={11} />
-                  </span>
-                  작성
-                </div>
-                <i />
-                <div
-                  className={
-                    content && ['review', 'changes', 'approved'].includes(content.status)
-                      ? 'done'
-                      : ''
-                  }
-                >
-                  <span>{content?.status === 'approved' ? <Check size={11} /> : '2'}</span>검토
-                </div>
-                <i />
-                <div className={content?.status === 'approved' ? 'done' : ''}>
-                  <span>{content?.status === 'approved' ? <Check size={11} /> : '3'}</span>승인
-                </div>
               </div>
               {content?.status === 'review' ? (
                 <div className="checklist-section">
                   <h3>발행 전 체크리스트</h3>
-                  <p>원고를 읽고 하나씩 확인해 주세요.</p>
+
                   {[
                     {
                       id: 'accuracy' as const,
                       title: '내용과 오탈자를 확인했어요',
-                      desc: '정보가 정확하고 읽기 자연스러워요',
                     },
                     {
                       id: 'rights' as const,
                       title: '사용 권리를 확인했어요',
-                      desc: '인용·이미지 등의 권리에 문제가 없어요',
                     },
                     {
                       id: 'channels' as const,
                       title: '채널별 원고를 확인했어요',
-                      desc: '각 채널의 표현과 글자 수가 적절해요',
                     },
-                  ].map(({ id, title, desc }) => (
+                  ].map(({ id, title }) => (
                     <label className={`checklist-item ${checks[id] ? 'checked' : ''}`} key={id}>
                       <input
                         type="checkbox"
@@ -577,7 +515,6 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                       <span className="check-square">{checks[id] && <Check size={12} />}</span>
                       <span>
                         <b>{title}</b>
-                        <small>{desc}</small>
                       </span>
                     </label>
                   ))}
@@ -600,16 +537,9 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                 </div>
               ) : content?.status === 'approved' ? (
                 <div className="approved-section">
-                  <div className="approval-card">
-                    <ShieldCheck size={20} />
-                    <b>꼼꼼한 검토를 마쳤어요</b>
-                    <span>{content.approvedAt && formatTime(content.approvedAt)} 승인</span>
-                    <p>
-                      원고는 발행 준비 상태로 보관돼요.
-                      <br />
-                      지금은 외부에 업로드되지 않아요.
-                    </p>
-                  </div>
+                  <p className="approved-at">
+                    {content.approvedAt && formatTime(content.approvedAt)} 승인
+                  </p>
                   <button
                     className="button full"
                     disabled={!canAct}
@@ -622,7 +552,6 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                     <LockKeyhole size={15} />
                     채널 연결 후 발행 가능
                   </button>
-                  <p className="review-small-note">내용을 수정하면 승인을 다시 받아요.</p>
                 </div>
               ) : (
                 <div className="submit-section">
@@ -639,11 +568,6 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                       </p>
                     </div>
                   )}
-                  <p>
-                    {content?.status === 'changes'
-                      ? '의견을 반영해 원고를 다듬고, 다시 검토를 요청해 주세요.'
-                      : '원고가 준비되었다면 검토를 요청해 주세요. 내가 직접 읽고 승인할 수 있어요.'}
-                  </p>
                   <button
                     className="button primary full"
                     disabled={!canAct}
@@ -653,15 +577,13 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                     {content?.status === 'changes' ? '다시 검토 요청' : '검토 요청'}
                     <ArrowRight size={15} />
                   </button>
-                  {!content && (
-                    <span className="review-small-note">먼저 원고를 임시 저장해 주세요.</span>
-                  )}
+                  {!content && <span className="review-small-note">먼저 저장해 주세요.</span>}
                 </div>
               )}
               {dirty && (
                 <p className="dirty-hint">
                   <Save size={13} />
-                  변경사항을 저장하면 검토할 수 있어요.
+                  검토하려면 변경사항을 저장하세요.
                 </p>
               )}
               <div className="review-comment">
@@ -706,12 +628,11 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
             </>
           ) : (
             <div className="history-panel">
-              <h3>이야기가 완성되는 과정</h3>
-              <p>작성부터 승인까지 모든 기록을 남겨요.</p>
+              <h3>변경 이력</h3>
               {!content ? (
                 <div className="history-empty">
                   <History size={25} />
-                  <p>원고를 저장하면 이력이 시작돼요.</p>
+                  <p>기록 없음</p>
                 </div>
               ) : (
                 <ol>
@@ -745,10 +666,6 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
             </div>
           )}
           <div className="review-panel-bottom">
-            <span>
-              <LockKeyhole size={13} />
-              승인 전에는 어디에도 발행되지 않아요.
-            </span>
             {content && (
               <button className="delete-link" onClick={() => setDeleteOpen(true)} disabled={busy}>
                 <Trash2 size={13} />

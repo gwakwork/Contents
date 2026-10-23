@@ -40,7 +40,7 @@ test('standalone document without backend APIs: create, revise, approve, export,
     if (/^https?:/.test(request.url()) && request.url() !== entry) network.push(request.url());
   });
   await page.goto(entry);
-  await expect(page.getByRole('heading', { name: '첫 번째 이야기를 모아볼까요?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '아직 콘텐츠가 없습니다.' })).toBeVisible();
   await create(page);
   await page.getByRole('button', { name: '검토 요청', exact: true }).click();
   await page

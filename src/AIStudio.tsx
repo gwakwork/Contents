@@ -211,7 +211,7 @@ export default function AIStudio({
         body: '{}',
       });
       onAdopt(content);
-      notify('AI 원고를 검토함으로 보냈어요. 원문과 결과를 확인한 뒤 승인해 주세요.');
+      notify('검토함으로 보냈습니다.');
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -224,13 +224,15 @@ export default function AIStudio({
     return (
       <div className="ai-offline">
         <Sparkles size={30} />
-        <h2>AI 각색은 Mac 실행 버전에서 사용할 수 있어요</h2>
-        <p>
-          지금 열어 둔 HTML은 오프라인 원고 관리 버전이에요.
-          <br />
-          AI 연결은 API 키를 브라우저에 넣지 않는 Mac 실행 버전을 사용해 주세요.
-        </p>
-        <span>기존 원고는 ‘백업 저장’으로 보관하고 새 버전에서 가져올 수 있어요.</span>
+        <h2>Mac 실행 버전이 필요합니다.</h2>
+        <a
+          className="button primary"
+          href="https://github.com/gwakwork/Contents/blob/main/release/narrative-mac.zip"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Narrative 다운로드
+        </a>
       </div>
     );
   const formula = formulas.find((f) => f.id === input.formula);
@@ -240,31 +242,16 @@ export default function AIStudio({
     : (run?.input.channels[0] ?? 'website');
   return (
     <div className="ai-studio">
-      <div className="ai-intro">
-        <div>
-          <span className="ai-intro-icon">
-            <WandSparkles size={23} />
+      <div className="ai-toolbar">
+        <div className={`ai-connection ${settings?.configured ? 'configured' : ''}`}>
+          <KeyRound size={15} />
+          <span>
+            {settings?.configured ? `API 키 저장됨 · ${settings.model}` : 'API 키 미연결'}
           </span>
-          <div>
-            <h2>원문 하나로, 채널에 맞는 새로운 콘텐츠</h2>
-            <p>공식에 맞게 AI가 각색하고, 마지막 결정은 내가 해요.</p>
-          </div>
         </div>
         <button className="button" onClick={() => setSettingsOpen(true)}>
           <Settings2 size={15} />
           AI 연결 설정
-        </button>
-      </div>
-      <div className={`ai-connection ${settings?.configured ? 'configured' : ''}`}>
-        <span>
-          <KeyRound size={14} />
-          {settings?.configured
-            ? `API 키 저장됨 · ${settings.model}`
-            : 'OpenAI API 키를 먼저 연결해 주세요'}
-        </span>
-        <button onClick={() => setSettingsOpen(true)}>
-          {settings?.configured ? '설정 변경' : '키 연결하기'}
-          <ChevronRight size={13} />
         </button>
       </div>
       {error && (
@@ -277,8 +264,7 @@ export default function AIStudio({
           <div className="ai-section-heading">
             <span>01</span>
             <div>
-              <h3>원문과 각색 방법</h3>
-              <p>메모, 기존 글, 참고 내용을 자유롭게 넣어 주세요.</p>
+              <h3>원문</h3>
             </div>
           </div>
           <fieldset disabled={busy || running} className="ai-fieldset">
@@ -289,7 +275,7 @@ export default function AIStudio({
               <textarea
                 id="ai-source"
                 maxLength={20000}
-                placeholder="AI가 재가공할 원문을 붙여 넣어 주세요. 원문에 없는 사실을 임의로 추가하지 않도록 요청해요."
+                placeholder="각색할 내용을 붙여 넣으세요."
                 value={input.source}
                 onChange={(event) => change('source', event.target.value)}
               />
@@ -313,7 +299,7 @@ export default function AIStudio({
                   </button>
                 ))}
               </div>
-              <p className="formula-description">{formula?.summary}</p>
+
               {formula?.stages.length ? (
                 <div className="formula-steps">
                   {formula.stages.map((s, index) => (
@@ -418,13 +404,12 @@ export default function AIStudio({
           </fieldset>
           <p className="ai-privacy">
             <ShieldCheck size={13} />
-            ‘AI로 각색하기’를 누르면 원문과 요청이 OpenAI로 전송되며 API 사용료가 발생해요. 사실과
-            표현은 결과에서 다시 확인해 주세요.
+            원문이 OpenAI로 전송되며 API 사용료가 발생합니다.
           </p>
           {running ? (
             <div className="ai-running" role="status">
               <Loader2 size={18} className="spin" />
-              <span>AI가 공식을 적용해 원고를 다듬고 있어요.</span>
+              <span>각색 중…</span>
               <button disabled={busy} onClick={() => void cancel()}>
                 <Square size={12} />
                 취소
@@ -446,8 +431,7 @@ export default function AIStudio({
           <div className="ai-section-heading">
             <span>02</span>
             <div>
-              <h3>AI 결과 확인</h3>
-              <p>원문과 비교하고, 검토함에서 수정·승인해 주세요.</p>
+              <h3>각색 결과</h3>
             </div>
           </div>
           {result ? (
@@ -480,40 +464,42 @@ export default function AIStudio({
                 <summary>원문과 비교하기</summary>
                 <p>{run!.input.source}</p>
               </details>
-              <div className="ai-formula-result">
-                <h4>공식을 이렇게 적용했어요</h4>
-                {result.formulaSteps.map((step, i) => (
-                  <div key={i}>
-                    <span>{String(i + 1).padStart(2, '0')}</span>
-                    <div>
-                      <b>{step.stage}</b>
-                      <p>{step.summary}</p>
+              <details className="ai-edit-summary">
+                <summary>편집 요약</summary>
+                <div className="ai-formula-result">
+                  <h4>공식 적용</h4>
+                  {result.formulaSteps.map((step, i) => (
+                    <div key={i}>
+                      <span>{String(i + 1).padStart(2, '0')}</span>
+                      <div>
+                        <b>{step.stage}</b>
+                        <p>{step.summary}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-              <div className="ai-editorial-notes">
-                <h4>바꾼 점</h4>
-                <ul>
-                  {result.changes.map((v, i) => (
-                    <li key={i}>{v}</li>
                   ))}
-                </ul>
-                <h4>검토할 때 확인해 주세요</h4>
-                {result.reviewNotes.length ? (
+                </div>
+                <div className="ai-editorial-notes">
+                  <h4>바꾼 점</h4>
+                  <ul>
+                    {result.changes.map((v, i) => (
+                      <li key={i}>{v}</li>
+                    ))}
+                  </ul>
+                </div>
+              </details>
+              {!!result.reviewNotes.length && (
+                <div className="ai-review-notes">
+                  <h4>검토할 사항</h4>
                   <ul>
                     {result.reviewNotes.map((v, i) => (
                       <li key={i}>{v}</li>
                     ))}
                   </ul>
-                ) : (
-                  <p>AI가 별도 항목을 남기지 않았어도 사실과 표현을 직접 확인해 주세요.</p>
-                )}
-              </div>
+                </div>
+              )}
               {dirty && (
                 <p className="ai-stale-notice" role="status">
-                  원문이나 옵션을 바꿨어요. 아래 결과는 이전 요청으로 만든 원고예요. 새 설정으로
-                  다시 각색해 주세요.
+                  입력이 변경되었습니다. 다시 각색해 주세요.
                 </p>
               )}
               <button
@@ -525,22 +511,14 @@ export default function AIStudio({
                 {run!.contentId ? '검토함에서 열기' : '이 결과를 검토함으로 보내기'}
                 <ArrowRight size={16} />
               </button>
-              <p className="ai-small-note">최종 승인 전에는 어디에도 발행되지 않아요.</p>
             </>
           ) : (
             <div className="ai-result-empty">
               {running ? <Loader2 size={35} className="spin" /> : <WandSparkles size={37} />}
               <h3>
-                {running
-                  ? '새로운 원고를 만들고 있어요'
-                  : run?.error
-                    ? STATUS[run.status] + '된 작업이에요'
-                    : '원문이 새로운 콘텐츠가 되는 곳'}
+                {running ? '각색 중…' : run?.error ? STATUS[run.status] : '아직 결과가 없습니다.'}
               </h3>
-              <p>
-                {run?.error ||
-                  '왼쪽에 원문을 넣고 공식을 골라 주세요.\n각색 결과와 적용한 공식을 여기서 확인할 수 있어요.'}
-              </p>
+              {run?.error && <p>{run.error}</p>}
             </div>
           )}
         </section>
@@ -566,7 +544,7 @@ export default function AIStudio({
           </button>
         </div>
         {!runs.length ? (
-          <p>AI 작업을 시작하면 원문과 결과가 이 컴퓨터에 기록돼요.</p>
+          <p>작업 없음</p>
         ) : (
           <div className="ai-history-list">
             {runs.map((r) => (
@@ -596,7 +574,7 @@ export default function AIStudio({
           onClose={() => setSettingsOpen(false)}
           onSaved={(value) => {
             setSettings(value);
-            notify('AI 설정을 저장했어요. 실제 결과는 AI 작업에서 확인할 수 있어요.');
+            notify('AI 설정을 저장했습니다.');
           }}
         />
       )}
@@ -639,10 +617,7 @@ function AISettings({
   return (
     <Modal title="OpenAI 연결 설정" onClose={onClose}>
       <div className="ai-settings">
-        <p>
-          키는 이 컴퓨터의 로컬 설정 파일에 보관해요. 브라우저 저장 공간, 원고 백업, GitHub에는
-          포함하지 않아요.
-        </p>
+        <p>API 키는 이 컴퓨터에 저장됩니다.</p>
         <a href="https://platform.openai.com/api-keys" target="_blank" rel="noreferrer">
           OpenAI에서 API 키 발급하기 ↗
         </a>
@@ -658,11 +633,7 @@ function AISettings({
             spellCheck={false}
             value={key}
             onChange={(event) => setKey(event.target.value)}
-            placeholder={
-              settings?.configured
-                ? '기존 키는 표시하지 않아요'
-                : '발급받은 API 키를 붙여 넣어 주세요'
-            }
+            placeholder={settings?.configured ? '새 키를 입력하면 변경됩니다.' : 'API 키 붙여넣기'}
           />
         </div>
         <div className="field">
@@ -673,18 +644,9 @@ function AISettings({
             onChange={(event) => setModel(event.target.value)}
             maxLength={100}
           />
-          <p className="field-help">
-            기본은 gpt-4.1-mini예요. 이용 가능한 모델 이름으로 변경할 수 있어요.
-          </p>
         </div>
-        {settings?.source === 'environment' && (
-          <p>
-            현재는 실행 환경의 키가 우선 적용돼요. 환경의 키를 바꾸려면 앱을 다시 시작해 주세요.
-          </p>
-        )}
-        <p className="ai-billing">
-          ChatGPT Plus·Pro 구독과 API 요금은 별도예요. 키 저장 자체는 AI 요청을 보내지 않아요.
-        </p>
+        {settings?.source === 'environment' && <p>실행 환경에 설정된 키를 사용 중입니다.</p>}
+        <p className="ai-billing">API 사용료는 ChatGPT 구독과 별도입니다.</p>
         {error && (
           <div className="error-message" role="alert">
             {error}

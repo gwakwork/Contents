@@ -1,6 +1,7 @@
-모아 AI 콘텐츠 스튜디오 · Mac용
+Narrative · Mac용
 
 macOS 13.5 이상, Apple Silicon/Intel Mac을 지원합니다.
+기존 버전이 실행 중이라면 해당 터미널에서 Control+C로 종료한 뒤 시작하세요. 기존 원고와 API 키는 유지됩니다.
 
 1. 이 폴더를 원하는 곳에 두고 '시작.command'를 더블클릭하세요.
 2. 처음 한 번은 공식 Node.js 실행 도구를 자동으로 받습니다. 직접 설치할 필요는 없습니다.

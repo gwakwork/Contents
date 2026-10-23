@@ -23,11 +23,14 @@ test('connect key, rewrite by formula and channel, compare original, adopt, appr
   // A new input clears any job restored from previous tests.
   await page.getByRole('button', { name: '새 원문으로 시작' }).click();
   await page.getByLabel('각색할 원문', { exact: false }).fill(SOURCE);
+  await expect(page).toHaveTitle('Narrative');
+  await expect(page.getByRole('button', { name: 'Narrative 홈' })).toBeAttached();
   await page.getByRole('button', { name: 'PAS', exact: true }).click();
   await page.getByLabel('인스타그램', { exact: true }).check();
   await page.getByLabel('Threads', { exact: true }).check();
   await page.getByRole('button', { name: 'AI로 각색하기' }).click();
   await expect(page.locator('.ai-result-copy h2')).toHaveText('함께 읽는 수요일');
+  await page.getByText('편집 요약', { exact: true }).click();
   await expect(page.locator('.ai-formula-result b')).toHaveText(['문제', '공감', '해결']);
   await page.getByRole('button', { name: 'Threads', exact: true }).click();
   await expect(page.locator('.ai-result-copy')).toContainText('참가비 없는 동네 독서 모임');
@@ -38,6 +41,7 @@ test('connect key, rewrite by formula and channel, compare original, adopt, appr
   await expect(page.locator('.ai-stale-notice')).toBeVisible();
   await page.getByRole('button', { name: 'AI로 각색하기' }).click();
   await expect(page.getByRole('button', { name: '이 결과를 검토함으로 보내기' })).toBeEnabled();
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `test-results/ai-${info.project.name}.png`, fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole('button', { name: '이 결과를 검토함으로 보내기' }).click();
@@ -58,7 +62,7 @@ test('connect key, rewrite by formula and channel, compare original, adopt, appr
   await expect(page.getByRole('heading', { name: '작성 중', exact: true })).toBeVisible();
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: '백업 저장', exact: true }).click();
-  expect((await download).suggestedFilename()).toMatch(/^moa-backup-/);
+  expect((await download).suggestedFilename()).toMatch(/^narrative-backup-/);
   const backup = await (await request.get('/api/backup')).json();
   expect(backup.contents[0].aiSource.source).toBe(SOURCE);
   expect(JSON.stringify(backup)).not.toContain(KEY);
