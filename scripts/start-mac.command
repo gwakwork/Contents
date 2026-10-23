@@ -73,6 +73,6 @@ for MOA_ATTEMPT in 1 2 3 4 5 6 7 8 9 10; do
 done
 if [ "$MOA_READY" != 'yes' ]; then fail '앱 실행을 확인하지 못했어요. 위 오류 문구를 확인해 주세요.'; fi
 /usr/bin/open 'http://127.0.0.1:3001'
-printf '\n브라우저가 열렸어요. AI 작업실 → AI 연결 설정에서 API 키를 입력하세요.\n'
+printf '\n브라우저가 열렸어요. 콘텐츠 기획 → 새 기획에서 시작하세요.\n'
 printf '사용하는 동안 이 터미널 창을 열어 두세요. 종료하려면 Control+C를 누르세요.\n'
 wait "$MOA_PID"

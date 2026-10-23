@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { api } from './api';
 import { ChannelIcon, Cover, Modal, StatusBadge, formatTime } from './components';
+import PlanSummary from './PlanSummary';
 import {
   CHANNEL_NAMES,
   COLORS,
@@ -60,12 +61,18 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
   const [previewChannel, setPreviewChannel] = useState<Channel>(content?.channels[0] ?? 'website');
   const [variantChannel, setVariantChannel] = useState<'instagram' | 'threads'>('instagram');
   const [sideTab, setSideTab] = useState('review');
-  const [checks, setChecks] = useState({ accuracy: false, rights: false, channels: false });
+  const [checks, setChecks] = useState({
+    accuracy: false,
+    rights: false,
+    channels: false,
+    intent: false,
+  });
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [sourceOpen, setSourceOpen] = useState(false);
+  const [planOpen, setPlanOpen] = useState(false);
   const commentRef = useRef<HTMLTextAreaElement>(null);
   const dirty = JSON.stringify(fields) !== JSON.stringify(fieldsOf(content));
   useEffect(() => {
@@ -78,7 +85,7 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
   }, [dirty, onDirty]);
   useEffect(() => {
     setFields(fieldsOf(content));
-    setChecks({ accuracy: false, rights: false, channels: false });
+    setChecks({ accuracy: false, rights: false, channels: false, intent: false });
   }, [content]);
   const change = <K extends keyof ContentFields>(key: K, value: ContentFields[K]) => {
     setFields((prev) => ({ ...prev, [key]: value }));
@@ -189,6 +196,12 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
           콘텐츠 목록
         </button>
         <div className="editor-heading-actions">
+          {content?.planning && (
+            <button className="button" onClick={() => setPlanOpen(true)}>
+              <FileText size={14} />
+              기획 기준 보기
+            </button>
+          )}
           {content?.aiSource && (
             <button className="button" onClick={() => setSourceOpen(true)}>
               <FileText size={14} />
@@ -488,6 +501,12 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
               {content?.status === 'review' ? (
                 <div className="checklist-section">
                   <h3>발행 전 체크리스트</h3>
+                  {content.planning && (
+                    <details className="review-plan-brief">
+                      <summary>기획 기준</summary>
+                      <PlanSummary plan={content.planning} compact />
+                    </details>
+                  )}
 
                   {[
                     {
@@ -502,6 +521,9 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                       id: 'channels' as const,
                       title: '채널별 원고를 확인했어요',
                     },
+                    ...(content.planning
+                      ? [{ id: 'intent' as const, title: '기획 목적과 메시지를 확인했어요' }]
+                      : []),
                   ].map(({ id, title }) => (
                     <label className={`checklist-item ${checks[id] ? 'checked' : ''}`} key={id}>
                       <input
@@ -520,7 +542,14 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
                   ))}
                   <button
                     className="button primary full"
-                    disabled={!canAct || !Object.values(checks).every(Boolean)}
+                    disabled={
+                      !canAct ||
+                      !(
+                        content.planning
+                          ? Object.values(checks)
+                          : [checks.accuracy, checks.rights, checks.channels]
+                      ).every(Boolean)
+                    }
                     onClick={() => void action('approve')}
                   >
                     <CheckCheck size={17} />
@@ -675,6 +704,18 @@ export default function Editor({ content, onBack, onUpdated, onDeleted, onDirty,
           </div>
         </aside>
       </div>
+      {planOpen && content?.planning && (
+        <Modal title="기획 기준" onClose={() => setPlanOpen(false)}>
+          <h3 className="plan-snapshot-title">{content.planning.fields.topic}</h3>
+          <p className="plan-snapshot-version">생성에 사용한 기획 · v{content.planning.revision}</p>
+          <PlanSummary plan={content.planning} />
+          <div className="modal-actions">
+            <button className="button primary" onClick={() => setPlanOpen(false)}>
+              확인
+            </button>
+          </div>
+        </Modal>
+      )}
       {sourceOpen && content?.aiSource && (
         <Modal title="AI가 각색한 원문" onClose={() => setSourceOpen(false)}>
           <div className="ai-source-details">

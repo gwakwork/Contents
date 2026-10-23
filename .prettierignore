@@ -3,6 +3,7 @@ dist
 release
 data
 test-results
+test-results-planning
 playwright-report
 package-lock.json
 *.tsbuildinfo

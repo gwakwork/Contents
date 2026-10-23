@@ -13,6 +13,7 @@ import { createStore, seedExamples } from './store.mjs';
 import { createAISettings } from './ai-settings.mjs';
 import { installAIRoutes } from './ai-routes.mjs';
 import { createBackup } from './backup.mjs';
+import { installPlanningRoutes } from './planning-routes.mjs';
 
 export function createApplication({
   dbPath = resolve('data/studio.sqlite'),
@@ -88,6 +89,7 @@ export function createApplication({
     settings: createAISettings({ file: settingsFile, environmentKey, environmentModel }),
     fetchImpl: aiFetch,
   });
+  installPlanningRoutes(app, { store });
   app.get('/api/channels', (_req, res) =>
     res.json([
       { id: 'website', name: '웹사이트', connected: false },
@@ -96,7 +98,7 @@ export function createApplication({
     ]),
   );
   app.get('/api/contents', (_req, res) => res.json(store.list()));
-  app.get('/api/backup', (_req, res) => res.json(createBackup(store.list())));
+  app.get('/api/backup', (_req, res) => res.json(createBackup(store.list(), store.listPlans())));
   app.post('/api/backup', (req, res) => res.json(store.restoreBackup(req.body)));
   app.post('/api/contents', (req, res) =>
     res.status(201).json(store.insert(createContent(req.body))),

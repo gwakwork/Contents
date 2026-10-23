@@ -4,6 +4,7 @@ import { dirname } from 'node:path';
 import { AppError, addEvent, createContent, transition } from './domain.mjs';
 import { createExampleContents } from './examples.mjs';
 import { mergeBackup, validateBackup } from './backup.mjs';
+import { mergePlanBackup, validatePlanBackup } from './planning.mjs';
 
 export function createStore(dbPath) {
   if (dbPath !== ':memory:') mkdirSync(dirname(dbPath), { recursive: true, mode: 0o700 });
@@ -11,7 +12,8 @@ export function createStore(dbPath) {
   db.exec('PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
   db.exec(`CREATE TABLE IF NOT EXISTS contents (id TEXT PRIMARY KEY, revision INTEGER NOT NULL, data TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-    CREATE TABLE IF NOT EXISTS ai_generations (id TEXT PRIMARY KEY, data TEXT NOT NULL);`);
+    CREATE TABLE IF NOT EXISTS ai_generations (id TEXT PRIMARY KEY, data TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS plans (id TEXT PRIMARY KEY, revision INTEGER NOT NULL, data TEXT NOT NULL);`);
   function generation(id) {
     const row = db.prepare('SELECT data FROM ai_generations WHERE id = ?').get(id);
     return row ? JSON.parse(row.data) : null;
@@ -54,12 +56,67 @@ export function createStore(dbPath) {
       throw new AppError('변경된 내용이 있어요. 새로고침 후 다시 시도해 주세요.', 409);
     return next;
   }
+  function insertPlan(plan) {
+    db.prepare('INSERT INTO plans (id, revision, data) VALUES (?, ?, ?)').run(
+      plan.id,
+      plan.revision,
+      JSON.stringify(plan),
+    );
+    return plan;
+  }
+  function getPlan(id) {
+    const row = db.prepare('SELECT data FROM plans WHERE id = ?').get(id);
+    if (!row) throw new AppError('기획을 찾을 수 없어요.', 404);
+    return JSON.parse(row.data);
+  }
+  function mutatePlan(id, revision, fn) {
+    if (!Number.isSafeInteger(revision) || revision < 1)
+      throw new AppError('기획 버전이 올바르지 않아요.');
+    const current = getPlan(id);
+    if (current.revision !== revision)
+      throw new AppError('다른 창에서 변경된 기획이 있어요. 다시 불러온 뒤 확인해 주세요.', 409);
+    const result = fn(current);
+    if (result === current) return current;
+    if (current.revision >= Number.MAX_SAFE_INTEGER)
+      throw new AppError(
+        '기획 버전의 범위를 초과했어요. 백업에서 별도 복원본을 만들어 주세요.',
+        409,
+      );
+    const next = { ...result, revision: current.revision + 1 };
+    if (
+      db
+        .prepare('UPDATE plans SET revision = ?, data = ? WHERE id = ? AND revision = ?')
+        .run(next.revision, JSON.stringify(next), id, revision).changes !== 1
+    )
+      throw new AppError('기획이 변경되었어요. 다시 불러온 뒤 확인해 주세요.', 409);
+    return next;
+  }
   return {
     insert,
     get,
     mutate,
+    insertPlan,
+    getPlan,
+    mutatePlan,
+    listPlans: () =>
+      db
+        .prepare('SELECT data FROM plans')
+        .all()
+        .map((row) => JSON.parse(row.data))
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+    removePlan(id, revision) {
+      if (!Number.isSafeInteger(revision) || revision < 1)
+        throw new AppError('기획 버전이 올바르지 않아요.');
+      getPlan(id);
+      if (
+        db.prepare('DELETE FROM plans WHERE id = ? AND revision = ?').run(id, revision).changes !==
+        1
+      )
+        throw new AppError('기획이 변경되었어요. 다시 불러온 뒤 확인해 주세요.', 409);
+    },
     restoreBackup(value) {
       const incoming = validateBackup(value);
+      const incomingPlans = validatePlanBackup(value);
       db.exec('BEGIN IMMEDIATE');
       try {
         const existing = db
@@ -67,9 +124,15 @@ export function createStore(dbPath) {
           .all()
           .map((row) => JSON.parse(row.data));
         const { additions, summary } = mergeBackup(existing, incoming);
+        const existingPlans = db
+          .prepare('SELECT data FROM plans')
+          .all()
+          .map((row) => JSON.parse(row.data));
+        const planMerge = mergePlanBackup(existingPlans, incomingPlans);
         for (const content of additions) insert(content);
+        for (const plan of planMerge.additions) insertPlan(plan);
         db.exec('COMMIT');
-        return summary;
+        return { ...summary, plans: planMerge.summary };
       } catch (error) {
         db.exec('ROLLBACK');
         throw error;
@@ -150,6 +213,7 @@ export function createStore(dbPath) {
           model: run.model,
           createdAt: run.createdAt,
         };
+        if (run.input.planning) content.planning = run.input.planning;
         content = addEvent(
           content,
           'note',

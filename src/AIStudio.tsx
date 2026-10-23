@@ -17,6 +17,8 @@ import { api } from './api';
 import { ChannelIcon, Modal, formatTime } from './components';
 import { CHANNEL_NAMES, type Channel, type Content } from './types';
 import { LOCAL_MODE } from './local-api';
+import { planToBrief, type Plan } from '../server/planning.mjs';
+import PlanSummary from './PlanSummary';
 
 interface Formula {
   id: string;
@@ -25,6 +27,9 @@ interface Formula {
   stages: string[];
 }
 interface AIInput {
+  planId?: string;
+  planRevision?: number;
+  planning?: Plan;
   source: string;
   formula: string;
   customFormula: string;
@@ -82,13 +87,21 @@ export default function AIStudio({
   onAdopt,
   onDirty,
   notify,
+  initialPlan,
+  onPlanEdit,
 }: {
   onAdopt: (content: Content) => void;
   onDirty: (dirty: boolean) => void;
   notify: (message: string) => void;
+  initialPlan?: Plan;
+  onPlanEdit?: (plan: Plan) => void;
 }) {
-  const [input, setInput] = useState<AIInput>({ ...EMPTY, channels: ['website'] });
-  const [savedInput, setSavedInput] = useState(JSON.stringify(EMPTY));
+  const initialInput: AIInput = initialPlan
+    ? planToBrief(initialPlan)
+    : { ...EMPTY, channels: ['website'] };
+  const [input, setInput] = useState<AIInput>(initialInput);
+  const [savedInput, setSavedInput] = useState(JSON.stringify(initialInput));
+  const [linkedPlan, setLinkedPlan] = useState<Plan | null>(initialPlan ?? null);
   const [formulas, setFormulas] = useState<Formula[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -110,6 +123,7 @@ export default function AIStudio({
   }, [dirty, onDirty]);
   const choose = (value: Run) => {
     setRun(value);
+    setLinkedPlan(value.input.planning ?? null);
     setInput(value.input);
     setSavedInput(JSON.stringify(value.input));
     setChannel(value.input.channels[0]);
@@ -129,7 +143,7 @@ export default function AIStudio({
         setFormulas(f);
         setSettings(s);
         setRuns(r);
-        if (r[0]) choose(r[0]);
+        if (!initialPlan && r[0]) choose(r[0]);
       })
       .catch((err) => {
         if (alive) setError((err as Error).message);
@@ -179,6 +193,7 @@ export default function AIStudio({
         body: JSON.stringify({ ...input, requestId: request.current.id }),
       });
       setRun(next);
+      setLinkedPlan(next.input.planning ?? null);
       setSavedInput(snapshot);
       setChannel(input.channels[0]);
       setRuns(await api<Run[]>('/ai/generations'));
@@ -258,6 +273,23 @@ export default function AIStudio({
         <div className="error-message" role="alert">
           {error}
         </div>
+      )}
+      {linkedPlan && (
+        <section className="ai-plan-link" aria-label="연결된 기획">
+          <div>
+            <span>연결된 기획 · v{linkedPlan.revision}</span>
+            <h2>{linkedPlan.fields.topic}</h2>
+          </div>
+          {onPlanEdit && (
+            <button className="button" onClick={() => onPlanEdit(linkedPlan)}>
+              기획 수정
+            </button>
+          )}
+          <details>
+            <summary>기획 기준</summary>
+            <PlanSummary plan={linkedPlan} compact />
+          </details>
+        </section>
       )}
       <div className="ai-workspace">
         <section className="ai-input-panel">
@@ -421,8 +453,8 @@ export default function AIStudio({
               disabled={busy || !settings?.configured || !input.source.trim()}
               onClick={() => void generate()}
             >
-              {busy ? <Loader2 size={17} className="spin" /> : <WandSparkles size={17} />}AI로
-              각색하기
+              {busy ? <Loader2 size={17} className="spin" /> : <WandSparkles size={17} />}
+              {linkedPlan ? 'AI 초안 만들기' : 'AI로 각색하기'}
               <ArrowRight size={16} />
             </button>
           )}
@@ -534,6 +566,7 @@ export default function AIStudio({
             onClick={() => {
               if (dirty && !window.confirm('입력한 원문을 비우고 새로 시작할까요?')) return;
               setInput({ ...EMPTY, channels: ['website'] });
+              setLinkedPlan(null);
               setSavedInput(JSON.stringify(EMPTY));
               setRun(null);
               request.current = null;

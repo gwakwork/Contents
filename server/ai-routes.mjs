@@ -29,6 +29,20 @@ export function installAIRoutes(app, { store, settings, fetchImpl }) {
     }
     if (active.size)
       throw new AppError('이미 AI가 작업하고 있어요. 기존 작업을 확인하거나 취소해 주세요.', 409);
+    if (input.planId) {
+      let plan;
+      try {
+        plan = store.getPlan(input.planId);
+      } catch {
+        throw new AppError('연결된 기획을 찾을 수 없어요. 기획에서 다시 시작해 주세요.', 409);
+      }
+      if (plan.status !== 'ready' || plan.revision !== input.planRevision)
+        throw new AppError(
+          '기획이 변경되었어요. 기획을 완료한 뒤 AI 작업실로 다시 보내 주세요.',
+          409,
+        );
+      input.planning = structuredClone(plan);
+    }
     const { apiKey, model } = settings.credentials();
     if (!apiKey) throw new AppError('먼저 AI 연결 설정에서 OpenAI API 키를 입력해 주세요.', 409);
     const run = store.saveGeneration({

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openLibrary } from '../helpers/navigation';
 
 test.beforeEach(async ({ request }) => {
   const response = await request.get('/api/contents');
@@ -13,6 +14,7 @@ test('create, review, request changes, approve, export, and re-review an edited 
   const failures: string[] = [];
   page.on('pageerror', (error) => failures.push(error.message));
   await page.goto('/');
+  await openLibrary(page);
   await expect(page.getByRole('heading', { name: '아직 콘텐츠가 없습니다.' })).toBeVisible();
   await page.getByRole('button', { name: '첫 콘텐츠 작성하기' }).click();
   await page.getByLabel('콘텐츠 제목').fill('나의 첫 번째 콘텐츠');
@@ -66,6 +68,7 @@ test('create, review, request changes, approve, export, and re-review an edited 
   await expect(page.getByRole('heading', { name: '작성 중', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '콘텐츠 목록', exact: true }).click();
   await page.reload();
+  await openLibrary(page);
   await expect(
     page.getByRole('heading', { name: '승인 이후 수정한 콘텐츠', exact: true }),
   ).toBeVisible();
@@ -77,6 +80,7 @@ test('sample library, search, filters, channel information, and safe sample clea
   page,
 }, testInfo) => {
   await page.goto('/');
+  await openLibrary(page);
   await page.getByRole('button', { name: '예시 콘텐츠 둘러보기' }).click();
   await expect(page.locator('.content-card')).toHaveCount(6);
   await page.evaluate(() => window.scrollTo(0, 0));

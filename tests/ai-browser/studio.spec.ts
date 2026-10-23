@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openLibrary } from '../helpers/navigation';
 
 const SOURCE = '매주 수요일에 동네 독서 모임을 엽니다. 참가비는 없습니다.';
 const KEY = 'sk-browser-test-not-a-real-key';
@@ -15,6 +16,7 @@ test('connect key, rewrite by formula and channel, compare original, adopt, appr
   const failures: string[] = [];
   page.on('pageerror', (error) => failures.push(error.message));
   await page.goto('/');
+  await openLibrary(page);
   await page.getByRole('button', { name: 'AI 작업실 열기' }).click();
   await page.getByRole('button', { name: 'AI 연결 설정', exact: true }).click();
   await page.getByLabel('OpenAI API 키', { exact: false }).fill(KEY);
@@ -69,6 +71,7 @@ test('connect key, rewrite by formula and channel, compare original, adopt, appr
   expect(await page.evaluate(() => JSON.stringify({ ...localStorage }))).not.toContain(KEY);
   expect(JSON.stringify(await (await request.get('/api/ai/settings')).json())).not.toContain(KEY);
   await page.reload();
+  await openLibrary(page);
   await expect(page.getByRole('heading', { name: '수정한 독서 모임', exact: true })).toBeVisible();
   expect(failures).toEqual([]);
 });
@@ -79,6 +82,7 @@ test('limit error stays failed after reload, without an automatic paid retry', a
 }) => {
   await request.put('/api/ai/settings', { data: { model: 'gpt-4.1-mini', apiKey: KEY } });
   await page.goto('/');
+  await openLibrary(page);
   await page.getByRole('button', { name: 'AI 작업실 열기' }).click();
   await page.getByRole('button', { name: '새 원문으로 시작' }).click();
   await page.getByLabel('각색할 원문', { exact: false }).fill('한도 오류 테스트');
@@ -86,6 +90,7 @@ test('limit error stays failed after reload, without an automatic paid retry', a
   await expect(page.locator('.ai-result-empty')).toContainText('OpenAI 사용 한도 또는 잔액');
   const runs = await (await request.get('/api/ai/generations')).json();
   await page.reload();
+  await openLibrary(page);
   await page.getByRole('button', { name: 'AI 작업실 열기' }).click();
   await expect(page.locator('.ai-result-empty')).toContainText('OpenAI 사용 한도 또는 잔액');
   expect((await (await request.get('/api/ai/generations')).json()).length).toBe(runs.length);

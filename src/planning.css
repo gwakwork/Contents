@@ -1,0 +1,806 @@
+/* Narrative planning uses the utility-card tokens already defined by DESIGN.md. */
+.planner {
+  min-width: 0;
+}
+.planner-toolbar,
+.planner-heading,
+.planner-list-toolbar,
+.planner-card-top,
+.planner-card-meta,
+.planner-card-open,
+.planner-save,
+.planner-footer,
+.planner-stage-heading,
+.planner-brief-heading {
+  display: flex;
+  align-items: center;
+}
+.planner-toolbar {
+  justify-content: space-between;
+  gap: 16px;
+  margin: -16px 0 24px;
+}
+.planner-save {
+  gap: 7px;
+  font-size: 12px;
+  color: var(--secondary);
+  min-height: 44px;
+}
+.planner-save > button {
+  min-height: 44px;
+  padding: 8px;
+  color: var(--primary);
+}
+.planner-heading {
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+.planner-heading h2 {
+  font-size: 28px;
+  line-height: 1.4;
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+}
+.planner-heading > div {
+  min-width: 0;
+}
+.planner-state {
+  display: inline-flex;
+  padding: 5px 10px;
+  border: 1px solid var(--divider);
+  border-radius: 9999px;
+  font-size: 11px;
+  color: var(--secondary);
+  background: var(--pearl);
+  white-space: nowrap;
+}
+.planner-state.ready {
+  color: var(--ink);
+}
+.planner-completion {
+  font-size: 12px;
+  color: var(--secondary);
+  white-space: nowrap;
+  padding-bottom: 5px;
+  font-variant-numeric: tabular-nums;
+}
+.planner-progress,
+.planner-card-progress {
+  height: 4px;
+  background: var(--divider);
+  overflow: hidden;
+  border-radius: 9999px;
+}
+.planner-progress > span,
+.planner-card-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+}
+.planner-progress {
+  margin-bottom: 20px;
+}
+.planner-steps {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 32px;
+}
+.planner-steps > button {
+  min-height: 52px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--secondary);
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+.planner-steps > button > span {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  border: 1px solid var(--hairline);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.planner-steps > button.active {
+  background: var(--canvas);
+  color: var(--ink);
+  border-color: var(--hairline);
+}
+.planner-steps > button.active > span {
+  color: var(--canvas);
+  border-color: var(--primary);
+  background: var(--primary);
+}
+.planner-steps > button.complete:not(.active) > span {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.planner-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: 24px;
+  align-items: start;
+}
+.planner-stage {
+  min-width: 0;
+  padding: 32px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--canvas);
+}
+.planner-stage-heading {
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+.planner-stage-heading > span {
+  margin-top: 5px;
+  color: var(--secondary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.planner-stage-heading > div {
+  min-width: 0;
+}
+.planner-stage-heading p {
+  font-size: 12px;
+  color: var(--secondary);
+  margin-bottom: 8px;
+}
+.planner-stage-heading h3 {
+  font-size: 25px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.planner-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.planner-choice-group {
+  padding: 0;
+  margin: 0 0 32px;
+  min-width: 0;
+  border: 0;
+}
+.planner-choice-group > legend {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0;
+  margin-bottom: 12px;
+}
+.planner-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.planner-options > label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.planner-options > label > span {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.planner-options > label > input {
+  accent-color: var(--primary);
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.planner-options > label > svg {
+  color: var(--primary);
+}
+.planner-options > label.selected {
+  border-color: var(--primary);
+  outline: 1px solid var(--primary);
+  outline-offset: -2px;
+}
+.planner-options > label:has(input:focus-visible) {
+  outline: 2px solid var(--primary-focus);
+  outline-offset: 3px;
+}
+.planner-options input:focus-visible {
+  outline: none;
+}
+.planner-custom-input {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--hairline);
+  background: var(--canvas);
+  border-radius: 8px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  min-height: 48px;
+  font-size: 17px;
+  line-height: 1.6;
+}
+.planner-custom-input::placeholder {
+  font-size: 14px;
+  color: var(--secondary);
+}
+.planner-text-field {
+  margin-bottom: 32px;
+}
+.planner-text-field textarea {
+  min-height: 108px;
+}
+.planner-starters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -20px 0 32px;
+}
+.planner-starters > button {
+  min-height: 44px;
+  border: 1px solid var(--hairline);
+  border-radius: 9999px;
+  padding: 10px 12px;
+  font-size: 11px;
+  color: var(--secondary);
+}
+.planner-channel-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.planner-channel-options > label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 58px;
+  padding: 12px 8px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.planner-channel-options > label.selected {
+  border-color: var(--primary);
+  outline: 1px solid var(--primary);
+  outline-offset: -2px;
+}
+.planner-channel-options > label > svg {
+  width: 15px;
+  height: 15px;
+}
+.planner-recommendation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid var(--divider);
+  border-radius: 8px;
+  background: var(--canvas-parchment);
+  padding: 16px;
+  margin: 0 0 24px;
+}
+.planner-recommendation > div {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+}
+.planner-recommendation > div > svg {
+  color: var(--primary);
+  margin-top: 2px;
+}
+.planner-recommendation small {
+  display: block;
+  font-size: 11px;
+  color: var(--secondary);
+  margin-top: 6px;
+}
+.planner-recommendation > .button {
+  flex-shrink: 0;
+  font-size: 12px;
+  padding: 10px 14px;
+}
+.planner-intention {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 18px;
+  margin-bottom: 32px;
+  border-radius: 8px;
+  color: var(--secondary);
+  background: var(--canvas-parchment);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.planner-intention > b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.planner-brief {
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 32px;
+}
+.planner-brief-heading {
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.planner-brief h4 {
+  font-size: 17px;
+}
+.planner-brief dl {
+  margin: 0;
+}
+.planner-brief dl > div {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) 44px;
+  align-items: start;
+  gap: 12px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--divider);
+}
+.planner-brief dl > div:last-child {
+  border-bottom: 0;
+}
+.planner-brief dt {
+  font-size: 12px;
+  color: var(--secondary);
+  padding-top: 2px;
+}
+.planner-brief dd {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.planner-brief dd > span {
+  display: block;
+  font-size: 12px;
+  color: var(--secondary);
+  margin-top: 8px;
+}
+.planner-brief dl button {
+  min-width: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: start center;
+  padding: 4px;
+  color: var(--primary);
+}
+.planner-brief details {
+  border-top: 1px solid var(--divider);
+}
+.planner-brief summary {
+  min-height: 48px;
+  cursor: pointer;
+  padding: 16px 0 0;
+  font-size: 12px;
+  color: var(--secondary);
+}
+.planner-confirmations {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+.planner-confirmations > legend {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0;
+  margin-bottom: 12px;
+}
+.planner-confirmations > label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--divider);
+  font-size: 13px;
+  cursor: pointer;
+}
+.planner-footer {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 28px;
+  margin-top: 32px;
+  border-top: 1px solid var(--divider);
+}
+.planner-footer > span {
+  font-size: 12px;
+  color: var(--secondary);
+  font-variant-numeric: tabular-nums;
+}
+.planner-footer .button {
+  font-size: 13px;
+}
+.planner-context {
+  position: sticky;
+  top: 88px;
+  padding: 24px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--canvas);
+}
+.planner-context > h3 {
+  font-size: 17px;
+  margin-bottom: 24px;
+}
+.planner-context dl {
+  margin: 0;
+}
+.planner-context dt {
+  font-size: 11px;
+  color: var(--secondary);
+  margin-bottom: 8px;
+}
+.planner-context dd {
+  font-size: 13px;
+  line-height: 1.75;
+  margin: 0 0 24px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.planner-context-metric {
+  border-top: 1px solid var(--divider);
+  padding-top: 20px;
+}
+.planner-context-metric > span {
+  display: block;
+  font-size: 11px;
+  color: var(--secondary);
+  margin-bottom: 8px;
+}
+.planner-context-metric b {
+  display: block;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.7;
+}
+.planner-context-metric p {
+  font-size: 12px;
+  color: var(--secondary);
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+.planner-validation {
+  padding: 16px 20px;
+  border-radius: 8px;
+  background: var(--warning-surface);
+  color: var(--warning);
+  margin-bottom: 24px;
+  font-size: 13px;
+}
+.planner-validation > b {
+  font-size: 14px;
+}
+.planner-validation ul {
+  margin: 10px 0 0;
+  padding-left: 20px;
+}
+.planner-validation li {
+  padding: 3px 0;
+}
+.planner-purpose-change {
+  margin: -12px 0 24px;
+  font-size: 12px;
+  color: var(--secondary);
+}
+.planner-list-toolbar {
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 32px;
+}
+.planner-list-filter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 9999px;
+  background: var(--divider);
+  padding: 4px;
+}
+.planner-list-filter > button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 15px;
+  border-radius: 9999px;
+  font-size: 13px;
+  color: var(--secondary);
+  white-space: nowrap;
+}
+.planner-list-filter > button > span {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.planner-list-filter > button.active {
+  background: var(--canvas);
+  color: var(--ink);
+  font-weight: 600;
+}
+.planner-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+.planner-card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--canvas);
+}
+.planner-card-top {
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.planner-card-top > .icon-button {
+  width: 44px;
+  height: 44px;
+  margin: -10px -10px -10px 0;
+}
+.planner-card-title {
+  width: 100%;
+  padding: 0;
+  text-align: left;
+}
+.planner-card-title > h2 {
+  font-size: 22px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.planner-card-purpose {
+  color: var(--secondary);
+  font-size: 12px;
+  line-height: 1.75;
+  margin-top: 12px;
+  margin-bottom: 28px;
+  overflow-wrap: anywhere;
+}
+.planner-card-purpose > span {
+  margin: 0 6px;
+}
+.planner-card-progress {
+  margin-top: auto;
+}
+.planner-card-meta {
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 10px;
+  color: var(--secondary);
+  margin-top: 10px;
+  margin-bottom: 24px;
+}
+.planner-card-open {
+  width: 100%;
+  justify-content: space-between;
+  min-height: 44px;
+  color: var(--primary);
+  padding: 0;
+  font-size: 13px;
+}
+.planner-empty > svg {
+  color: var(--secondary);
+}
+@media (max-width: 1350px) {
+  .planner-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .planner-context {
+    display: none;
+  }
+  .planner-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1068px) {
+  .planner-stage {
+    padding: 28px;
+  }
+  .planner-stage-heading h3 {
+    font-size: 24px;
+  }
+  .planner-steps {
+    gap: 4px;
+  }
+  .planner-steps > button {
+    padding: 8px 4px;
+    font-size: 12px;
+    gap: 5px;
+  }
+}
+@media (max-width: 640px) {
+  .planner-toolbar {
+    margin-top: -12px;
+    gap: 10px;
+  }
+  .planner-save {
+    font-size: 11px;
+    gap: 5px;
+  }
+  .planner-heading {
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .planner-heading h2 {
+    font-size: 24px;
+  }
+  .planner-completion {
+    padding-top: 7px;
+    font-size: 11px;
+  }
+  .planner-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+  .planner-steps > button {
+    min-height: 46px;
+    padding: 8px;
+    font-size: 12px;
+    gap: 8px;
+  }
+  .planner-stage {
+    padding: 24px 20px;
+  }
+  .planner-stage-heading {
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .planner-stage-heading h3 {
+    font-size: 21px;
+  }
+  .planner-stage-heading > span {
+    margin-top: 4px;
+    font-size: 11px;
+  }
+  .planner-options {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+  .planner-options > label {
+    min-height: 54px;
+    padding: 13px;
+    font-size: 14px;
+  }
+  .planner-choice-group {
+    margin-bottom: 28px;
+  }
+  .planner-channel-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .planner-channel-options > label {
+    justify-content: flex-start;
+    padding: 14px;
+    min-height: 54px;
+    font-size: 14px;
+  }
+  .planner-starters {
+    gap: 6px;
+    margin-top: -16px;
+  }
+  .planner-starters > button {
+    font-size: 10px;
+    padding: 10px;
+  }
+  .planner-recommendation {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .planner-recommendation > .button {
+    font-size: 12px;
+    min-height: 44px;
+  }
+  .planner-intention {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+  }
+  .planner-intention > svg {
+    transform: rotate(90deg);
+  }
+  .planner-brief {
+    padding: 16px;
+  }
+  .planner-brief h4 {
+    font-size: 16px;
+  }
+  .planner-brief dl > div {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 8px;
+    padding: 16px 0;
+  }
+  .planner-brief dt {
+    grid-column: 1;
+  }
+  .planner-brief dd {
+    grid-column: 1;
+  }
+  .planner-brief dl button {
+    grid-column: 2;
+    grid-row: span 2;
+  }
+  .planner-confirmations > label {
+    font-size: 12px;
+    gap: 10px;
+  }
+  .planner-footer {
+    gap: 8px;
+  }
+  .planner-footer > .button {
+    padding: 11px 15px;
+    font-size: 12px;
+  }
+  .planner-footer > span {
+    font-size: 10px;
+  }
+  .planner-footer > .button:last-child:nth-child(3) {
+    max-width: 100%;
+  }
+  .planner-footer > .button:last-child {
+    white-space: normal;
+  }
+  .planner-list-toolbar {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .planner-list-toolbar > .button {
+    font-size: 13px;
+  }
+  .planner-list-filter > button {
+    font-size: 12px;
+    padding: 10px 13px;
+  }
+  .planner-list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .planner-card {
+    padding: 24px;
+  }
+  .planner-card-title > h2 {
+    font-size: 21px;
+  }
+}
+.planner-save-error {
+  flex-wrap: wrap;
+}
+.planner-save-error > span {
+  flex-basis: 100%;
+}
+.planner-save-error > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.planner-save-error > div > button {
+  min-height: 44px;
+  font-size: 12px;
+  color: var(--primary);
+  padding: 8px 0;
+}

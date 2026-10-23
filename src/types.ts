@@ -1,3 +1,4 @@
+import type { Plan } from '../server/planning.mjs';
 export type Status = 'draft' | 'review' | 'changes' | 'approved';
 export type Channel = 'website' | 'instagram' | 'threads';
 export type Color = 'sage' | 'peach' | 'lavender' | 'sand' | 'blue' | 'rose';
@@ -10,6 +11,7 @@ export interface ContentFields {
   variants: { instagram: string; threads: string };
 }
 export interface Content extends ContentFields {
+  planning?: Plan;
   aiSource?: {
     generationId: string;
     source: string;

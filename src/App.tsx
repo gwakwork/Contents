@@ -16,6 +16,7 @@ import {
   Menu,
   MessageSquareText,
   Plus,
+  Route,
   Search,
   Settings2,
   Sparkles,
@@ -36,14 +37,20 @@ import {
 import { CHANNEL_NAMES, STATUSES, type Channel, type Content, type Status } from './types';
 import Editor from './Editor';
 import AIStudio from './AIStudio';
+import Planner from './Planner';
+import { createPortal } from 'react-dom';
+import type { Plan } from '../server/planning.mjs';
 import { LOCAL_MODE, createLocalBackup, restoreLocalBackup } from './local-api';
 
-type Page = 'all' | 'review' | 'approved' | 'channels' | 'ai';
+type Page = 'plans' | 'all' | 'review' | 'approved' | 'channels' | 'ai';
 export default function App() {
   const [contents, setContents] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [page, setPage] = useState<Page>('all');
+  const [page, setPage] = useState<Page>('plans');
+  const [planningId, setPlanningId] = useState<string | null>(null);
+  const [aiPlan, setAIPlan] = useState<Plan | null>(null);
+  const [navigationVersion, setNavigationVersion] = useState(0);
   const [selected, setSelected] = useState<Content | 'new' | null>(null);
   const [dirty, setDirty] = useState(false);
   const [search, setSearch] = useState('');
@@ -54,6 +61,7 @@ export default function App() {
   const [toast, setToast] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const [removeExamples, setRemoveExamples] = useState(false);
   const [localHelp, setLocalHelp] = useState(false);
   const importInput = useRef<HTMLInputElement>(null);
@@ -90,7 +98,10 @@ export default function App() {
   );
   const navigate = (nextPage: Page, content: Content | 'new' | null = null) => {
     if (dirty && !window.confirm('저장하지 않은 내용이 있어요. 저장하지 않고 나갈까요?')) return;
+    setNavigationVersion((version) => version + 1);
     setSelected(content);
+    if (nextPage === 'ai') setAIPlan(null);
+    if (nextPage === 'plans') setPlanningId(null);
     setDirty(false);
     setPage(nextPage);
     setStatus('all');
@@ -133,7 +144,7 @@ export default function App() {
   };
   const backup = async () => {
     if (dirty) {
-      notify('편집 중인 글을 먼저 저장한 뒤 백업해 주세요.');
+      notify('변경사항 저장이 끝난 뒤 백업해 주세요.');
       return;
     }
     setBusy(true);
@@ -147,7 +158,7 @@ export default function App() {
       link.download = `narrative-backup-${new Date().toISOString().slice(0, 10)}.json`;
       link.click();
       setTimeout(() => URL.revokeObjectURL(href), 1000);
-      notify('전체 원고와 검토 이력을 백업 파일로 내려받았어요.');
+      notify('기획과 원고를 백업 파일로 내려받았어요.');
     } catch (err) {
       notify((err as Error).message);
     } finally {
@@ -156,10 +167,11 @@ export default function App() {
   };
   const restore = async (file: File) => {
     if (dirty) {
-      notify('편집 중인 글을 먼저 저장한 뒤 가져와 주세요.');
+      notify('변경사항 저장이 끝난 뒤 가져와 주세요.');
       return;
     }
     setBusy(true);
+    setRestoring(true);
     try {
       if (file.size > 25 * 1024 * 1024)
         throw new Error('백업 파일은 25MB 이하만 가져올 수 있어요.');
@@ -171,7 +183,12 @@ export default function App() {
       }
       const summary = LOCAL_MODE
         ? await restoreLocalBackup(data)
-        : await api<{ added: number; copies: number; skipped: number }>('/backup', {
+        : await api<{
+            added: number;
+            copies: number;
+            skipped: number;
+            plans?: { added: number; copies: number; skipped: number };
+          }>('/backup', {
             method: 'POST',
             body: JSON.stringify(data),
           });
@@ -183,11 +200,12 @@ export default function App() {
       setStatus('all');
       setChannel('all');
       notify(
-        `${summary.added}개 복원, ${summary.copies}개는 별도 복원본으로 추가했어요. 같은 원고 ${summary.skipped}개는 그대로 두었어요.`,
+        `${summary.added}개 복원, ${summary.copies}개는 별도 복원본으로 추가했어요. 같은 원고 ${summary.skipped}개는 그대로 두었어요.${summary.plans ? ` 기획 ${summary.plans.added}개 복원, ${summary.plans.copies}개 복원본, ${summary.plans.skipped}개 유지.` : ''}`,
       );
     } catch (err) {
       notify((err as Error).message);
     } finally {
+      setRestoring(false);
       setBusy(false);
       if (importInput.current) importInput.current.value = '';
     }
@@ -214,15 +232,17 @@ export default function App() {
           : b.updatedAt.localeCompare(a.updatedAt),
     );
   const title =
-    page === 'ai'
-      ? 'AI 작업실'
-      : page === 'review'
-        ? '나의 검토함'
-        : page === 'approved'
-          ? '승인된 콘텐츠'
-          : page === 'channels'
-            ? '발행 채널'
-            : '모든 콘텐츠';
+    page === 'plans'
+      ? '콘텐츠 기획'
+      : page === 'ai'
+        ? 'AI 작업실'
+        : page === 'review'
+          ? '나의 검토함'
+          : page === 'approved'
+            ? '승인된 콘텐츠'
+            : page === 'channels'
+              ? '발행 채널'
+              : '모든 콘텐츠';
   const navItems = [
     { id: 'all' as Page, label: '모든 콘텐츠', icon: FolderOpen, count: contents.length },
     {
@@ -234,7 +254,17 @@ export default function App() {
     { id: 'approved' as Page, label: '승인된 콘텐츠', icon: CheckCheck, count: counts.approved },
   ];
   return (
-    <div className="app-shell">
+    <div className="app-shell" inert={restoring} aria-busy={restoring}>
+      {restoring &&
+        createPortal(
+          <div className="backup-progress" role="status" aria-live="polite">
+            <div>
+              <Loader2 size={20} className="spin" aria-hidden="true" />
+              <span>백업을 가져오고 있습니다.</span>
+            </div>
+          </div>,
+          document.body,
+        )}
       {mobileOpen && (
         <button
           aria-label="메뉴 닫기"
@@ -243,10 +273,21 @@ export default function App() {
         />
       )}
       <aside className={`sidebar ${mobileOpen ? 'open' : ''}`}>
-        <button className="brand-button" onClick={() => navigate('all')} aria-label="Narrative 홈">
+        <button
+          className="brand-button"
+          onClick={() => navigate('plans')}
+          aria-label="Narrative 홈"
+        >
           <Brand />
         </button>
         <nav aria-label="주 메뉴">
+          <button
+            className={`nav-item ${page === 'plans' && !selected ? 'active' : ''}`}
+            onClick={() => navigate('plans')}
+          >
+            <Route size={19} />
+            <span>콘텐츠 기획</span>
+          </button>
           <button
             className={`nav-item ${page === 'ai' && !selected ? 'active' : ''}`}
             onClick={() => navigate('ai')}
@@ -308,7 +349,7 @@ export default function App() {
               disabled={busy}
               onClick={() => {
                 if (dirty) {
-                  notify('편집 중인 글을 먼저 저장한 뒤 가져와 주세요.');
+                  notify('변경사항 저장이 끝난 뒤 가져와 주세요.');
                   return;
                 }
                 importInput.current?.click();
@@ -355,7 +396,7 @@ export default function App() {
             <div className="page-content">
               <div className="page-heading">
                 <h1>{title}</h1>
-                {!['ai', 'channels'].includes(page) && (
+                {!['plans', 'ai', 'channels'].includes(page) && (
                   <div className="page-actions">
                     <button className="button" onClick={() => navigate(page, 'new')}>
                       <Plus size={17} />새 콘텐츠 작성
@@ -367,8 +408,32 @@ export default function App() {
                   </div>
                 )}
               </div>
-              {page === 'ai' ? (
+              {page === 'plans' ? (
+                <Planner
+                  key={`plans:${navigationVersion}`}
+                  initialPlanId={planningId}
+                  onCreateContent={(plan) => {
+                    setAIPlan(plan);
+                    setDirty(false);
+                    setPage('ai');
+                  }}
+                  onDirty={setDirty}
+                  notify={notify}
+                />
+              ) : page === 'ai' ? (
                 <AIStudio
+                  key={`${aiPlan ? `${aiPlan.id}:${aiPlan.revision}` : 'standalone'}:${navigationVersion}`}
+                  initialPlan={aiPlan ?? undefined}
+                  onPlanEdit={(plan) => {
+                    if (
+                      dirty &&
+                      !window.confirm('저장하지 않은 AI 입력을 두고 기획으로 돌아갈까요?')
+                    )
+                      return;
+                    setPlanningId(plan.id);
+                    setDirty(false);
+                    setPage('plans');
+                  }}
                   onAdopt={(content) => {
                     setDirty(false);
                     updated(content);

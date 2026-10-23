@@ -2238,3 +2238,112 @@ svg {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Read-only planning criteria alongside drafting and review. */
+.ai-plan-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+  padding: 24px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  background: var(--canvas);
+}
+.ai-plan-link > div {
+  flex: 1;
+  min-width: 160px;
+}
+.ai-plan-link > div > span,
+.plan-snapshot-version {
+  font-size: 12px;
+  color: var(--secondary);
+}
+
+.backup-progress {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(245 245 247 / 75%);
+}
+.backup-progress > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  background: #fff;
+  color: var(--ink);
+}
+.backup-progress svg {
+  color: var(--primary);
+}
+.ai-plan-link h2 {
+  font-size: 21px;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+.ai-plan-link > details {
+  flex-basis: 100%;
+  border-top: 1px solid var(--divider);
+  padding-top: 12px;
+}
+.ai-plan-link summary,
+.review-plan-brief summary {
+  min-height: 44px;
+  padding: 12px 0;
+  color: var(--secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
+.plan-brief-summary {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.plan-brief-summary > div {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--divider);
+}
+.plan-brief-summary > div:last-child {
+  border-bottom: 0;
+}
+.plan-brief-summary dt {
+  color: var(--secondary);
+  font-size: 12px;
+}
+.plan-brief-summary dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.review-plan-brief {
+  margin-bottom: 16px;
+}
+.review-plan-brief .plan-brief-summary > div {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+.plan-snapshot-title {
+  font-size: 21px;
+}
+.plan-snapshot-version {
+  margin: 8px 0 20px;
+}
+@media (max-width: 640px) {
+  .ai-plan-link {
+    padding: 20px;
+  }
+  .plan-brief-summary > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+}

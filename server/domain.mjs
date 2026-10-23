@@ -109,8 +109,13 @@ export function transition(content, input) {
     if (content.status !== 'review')
       throw new AppError('검토 대기 중인 글만 승인할 수 있어요.', 409);
     assertReviewable(content);
-    if (!CHECKS.every((key) => input.checks?.[key] === true))
-      throw new AppError('세 가지 검토 항목을 모두 확인해 주세요.');
+    const requiredChecks = content.planning ? [...CHECKS, 'intent'] : CHECKS;
+    if (!requiredChecks.every((key) => input.checks?.[key] === true))
+      throw new AppError(
+        content.planning
+          ? '기획 기준을 포함해 네 가지 검토 항목을 모두 확인해 주세요.'
+          : '세 가지 검토 항목을 모두 확인해 주세요.',
+      );
     const at = new Date().toISOString();
     return addEvent(
       {
@@ -118,7 +123,7 @@ export function transition(content, input) {
         status: 'approved',
         approvedAt: at,
         approval: {
-          checks: Object.fromEntries(CHECKS.map((key) => [key, true])),
+          checks: Object.fromEntries(requiredChecks.map((key) => [key, true])),
           revision: content.revision + 1,
           at,
         },

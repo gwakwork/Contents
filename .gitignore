@@ -13,3 +13,4 @@ ai-settings.json.*.tmp
 *.tsbuildinfo
 playwright-report/
 test-results/
+test-results-planning/

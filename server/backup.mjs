@@ -1,12 +1,14 @@
 import { AppError, addEvent, validateFields } from './domain.mjs';
+import { validateStoredPlan } from './planning.mjs';
 
 const date = (value) => typeof value === 'string' && Number.isFinite(Date.parse(value));
-export function createBackup(contents) {
+export function createBackup(contents, plans = []) {
   return {
     format: 'moa-content-backup',
     version: 1,
     exportedAt: new Date().toISOString(),
     contents,
+    plans,
   };
 }
 export function validateBackup(backup) {
@@ -47,6 +49,9 @@ export function validateBackup(backup) {
     )
       throw new AppError('백업의 콘텐츠 정보가 올바르지 않아요. 원본 파일을 확인해 주세요.');
     const fields = validateFields(c);
+    const planning = c.planning === undefined ? undefined : validateStoredPlan(c.planning);
+    if (planning && planning.status !== 'ready')
+      throw new AppError('원고에 연결된 기획의 완료 상태가 올바르지 않아요.');
     if (c.status === 'approved') {
       if (
         !c.approval ||
@@ -55,7 +60,9 @@ export function validateBackup(backup) {
         !Number.isInteger(c.approval.revision) ||
         c.approval.revision < 1 ||
         c.approval.revision > c.revision ||
-        !['accuracy', 'rights', 'channels'].every((key) => c.approval.checks?.[key] === true)
+        !['accuracy', 'rights', 'channels', ...(planning ? ['intent'] : [])].every(
+          (key) => c.approval.checks?.[key] === true,
+        )
       )
         throw new AppError('백업의 승인 기록이 올바르지 않아요.');
     } else if (c.approval !== null || c.approvedAt !== null)
@@ -99,6 +106,7 @@ export function validateBackup(backup) {
       approval: c.approval,
       history: c.history,
       ...(aiSource ? { aiSource } : {}),
+      ...(planning ? { planning } : {}),
     };
   });
 }

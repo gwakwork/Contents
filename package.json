@@ -1,6 +1,6 @@
 {
   "name": "narrative-content-studio",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -16,7 +16,8 @@
     "test:e2e": "playwright test",
     "test:ai": "playwright test --config playwright.ai.config.ts",
     "test:local": "npm run build:local && playwright test --config playwright.local.config.ts",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test:planning": "playwright test --config playwright.planning.config.ts"
   },
   "dependencies": {
     "express": "^5.1.0",

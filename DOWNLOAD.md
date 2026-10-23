@@ -1,11 +1,12 @@
-# Mac용 AI 버전 받기
+# Narrative Mac 버전 받기
 
-1. [AI 버전 ZIP 파일 페이지](https://github.com/gwakwork/Contents/blob/main/release/narrative-mac.zip)를 엽니다. GitHub 로그인을 요구하면 이 저장소에 접근할 수 있는 계정으로 로그인합니다.
+1. [Mac 버전 ZIP 파일 페이지](https://github.com/gwakwork/Contents/blob/main/release/narrative-mac.zip)를 엽니다. GitHub 로그인을 요구하면 이 저장소에 접근할 수 있는 계정으로 로그인합니다.
 2. **Download raw file** 또는 다운로드 아이콘을 눌러 `narrative-mac.zip`을 저장합니다. 파일 페이지를 연 것만으로 저장되는 것은 아닙니다.
 3. Finder의 **다운로드**에서 ZIP을 더블클릭해 압축을 풉니다.
 4. `Narrative-Mac` 폴더 안의 **시작.command**를 더블클릭합니다. macOS 13.5 이상이 필요합니다. 처음 한 번은 실행 도구를 공식 사이트에서 자동으로 받습니다.
-5. 열린 화면에서 **AI 작업실 → AI 연결 설정**에 OpenAI API 키를 입력합니다. 키를 채팅에 보내지 마세요. API 요금은 ChatGPT 구독과 별도입니다.
-6. **원문 입력 → 공식 선택 → AI로 각색하기 → 결과 확인 → 검토함으로 보내기 → 직접 승인** 순서로 사용합니다.
+5. 첫 화면에서 **새 기획**을 누릅니다. 목적·독자·메시지·행동·구성·실행을 선택해 정리합니다. 자동 저장되며 API 키 없이 기획할 수 있습니다.
+6. 기획을 확정한 뒤 AI 초안이 필요하면 **AI 연결 설정**에 OpenAI API 키를 저장하고 **AI 초안 만들기**를 누릅니다. API 요금은 ChatGPT 구독과 별도입니다.
+7. 결과를 검토함으로 보내고 기획의 목적과 메시지까지 확인한 뒤 승인합니다.
 
 기존 버전이 실행 중이라면 그 터미널에서 **Control+C**로 종료한 뒤 새 버전을 실행하세요. 저장한 원고와 API 키는 그대로 사용합니다.
 

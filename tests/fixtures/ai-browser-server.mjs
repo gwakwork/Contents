@@ -28,7 +28,7 @@ const local = createApplication({
     return Response.json(envelope(responseFor(input)));
   },
 });
-const server = local.app.listen(3102, '127.0.0.1');
+const server = local.app.listen(Number(process.env.PORT || 3102), '127.0.0.1');
 async function shutdown() {
   await local.close();
   server.close(() => {
